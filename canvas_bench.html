@@ -1,0 +1,103 @@
+<html>
+  <head>
+    <title></title>
+    <meta content="">
+    <style>
+    html, body {
+        width:  100%;
+        height: 100%;
+        margin: 0;
+    }
+    #bg {
+
+    }
+    </style>
+  </head>
+  <body
+    ><canvas id=bg></canvas
+  ></body>
+</html>
+<script>
+(function ()
+{
+    "use strict";
+    
+    var bg_el = document.getElementById("bg"),
+        bg_context,
+        tilesheet = document.createElement("img");
+    
+    function resize_canvas(e)
+    {
+        bg_el.setAttribute("width",  window.innerWidth);
+        bg_el.setAttribute("height", window.innerHeight);
+        
+        //bg_context.drawImage(tilesheet, 0, 0, Number(tilesheet.width), Number(tilesheet.height));
+        
+        //draw_tile(7 * 23, 0, 32, 32);
+    }
+    
+    function draw_tile(x, y, w, h)
+    {
+        var x_pos,
+            y_pos,
+            x_len,
+            y_len;
+        
+        x_len = window.innerWidth / w;
+        y_len = window.innerWidth / h;
+        
+        //x_len *= 10;
+        //y_len *= 10;
+        var start_time = (new Date()).getTime();
+        for (x_pos = 0; x_pos < x_len; x_pos += 1) {
+            for (y_pos = 0; y_pos < y_len; y_pos += 1) {
+                bg_context.drawImage(tilesheet, x, y, w, h, x_pos * w, y_pos * h, w, h);
+            }
+        }
+        document.title = (1 / (((new Date()).getTime() - start_time) / 1000));
+    }
+    
+    
+    bg_context = bg_el.getContext("2d");
+    
+    tilesheet.onload = function ()
+    {
+        var start_time,
+            times = 0;
+        
+        window.onresize = resize_canvas;
+        
+        resize_canvas();
+        
+        window.setInterval(function ()
+        {
+            draw_tile(Math.floor((Math.random() * 10) + 1) * 23, 0, 32, 32);
+            times += 1;
+            //console.log(times);
+        }, 0);
+        
+        /*
+        start_time = (new Date()).getTime();
+        window.setInterval(function ()
+        {
+            var time_now = (new Date()).getTime(),
+                total_time;
+            
+            total_time = time_now - start_time;
+            start_time = time_now;
+            
+            //console.log(times / (total_time / 1000));
+            document.title = (times / (total_time / 1000));
+            times = 0;
+        }, 10000);
+        */
+    };
+    
+    tilesheet.src = "./assets/bq-tilesheet.png";
+    
+    
+    
+    
+    
+}());
+</script>
