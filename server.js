@@ -7,12 +7,23 @@ var formidable = require("formidable"),
     path = require("path"),
     qs   = require("querystring");
 
+function get_assets(response)
+{
+    response.writeHead(200, {"Content-Type": "application/json"});
+    fs.readdir("assets", function (err, files)
+    {
+        response.end(JSON.stringify(files));
+    });
+}
+
 require("http").createServer(function (request, response)
 {
-    var form;
+    var form,
+        url_parts = url.parse(request.url),
+        query;
     
     /// Is there an upload?
-    if (request.url === "/upload" && request.method.toLowerCase() == "post") {
+    if (url_parts.pathname === "/upload" && request.method.toLowerCase() == "post") {
         form = new formidable.IncomingForm();
         form.maxFieldsSize = 100 * 1024 * 1024; /// 100 MB
         form.encoding = "binary";
@@ -40,6 +51,13 @@ require("http").createServer(function (request, response)
         {
             response.writeHead(200, {"content-type": "text/plain"});
         });
+    } else if (url_parts.pathname === "/api") {
+        query = qs.parse(url_parts.query);
+        switch (query.action) {
+        case "get_assets":
+            get_assets(response);
+            return;
+        }
     } else {
         /// Check to see if the client is trying to access a real file.
         path.exists(request.url.substr(1), function (exists)
@@ -61,10 +79,10 @@ require("http").createServer(function (request, response)
                     response.writeHead(304, {});
                     response.end();
                 } else {
-                    fs.readFile(filename, "utf8", function (err, data)
+                    fs.readFile(filename, "binary", function (err, data)
                     {
                         response.writeHead(200, {"Content-Type": mime.lookup(filename), "Last-Modified": stats.mtime});
-                        response.end(data);
+                        response.end(data, "binary");
                     });
                 }
             });
