@@ -1,10 +1,11 @@
-$(document).ready(function ()
+document.addEventListener("DOMContentLoaded", function ()
 {
     "use strict";
     
     var bg_el = document.getElementById("bg"),
         bg_context,
         editor = document.getElementById("editor"),
+        editor_resize,
         game_name = "Pioneer",
         get_assets,
         tabs = [],
@@ -23,6 +24,29 @@ $(document).ready(function ()
     window.onresize = resize_canvas;
     resize_canvas();
     
+    editor_resize = (function ()
+    {
+        var functions = [];
+        
+        return {
+            attach: function (func)
+            {
+                if (typeof func === "function") {
+                    functions[functions.length] = func;
+                    return true;
+                }
+                return false;
+            },
+            trigger: function (e)
+            {
+                functions.forEach(function (func)
+                {
+                    func(e);
+                });
+            }
+        };
+    }());
+    
     (function ()
     {
         var pos = window.localStorage.getItem("editor_pos");
@@ -37,9 +61,18 @@ $(document).ready(function ()
         editor.style.width  = pos.width  + "px";
         
         ///NOTE: It does not work without draggable (even though it cannot be dragged).
-        $(editor).draggable().resizable({ handles: "all" });
+        $(editor).draggable().resizable({
+            handles: "all",
+            resize: function (e, ui)
+            {
+                editor_resize.trigger(ui.size);
+            }
+        });
         
-        /// Create tabs
+        
+        /**
+         * Create tabs
+         */
         (function ()
         {
             var cur_tab = 2,
@@ -50,7 +83,11 @@ $(document).ready(function ()
             tab_container.id = "tabs";
             tab_container.appendChild(ul);
             
-            tab_container.onmousedown = function (e) {e.stopPropagation();};
+            /// Disable dragging.
+            tab_container.onmousedown = function (e)
+            {
+                e.stopPropagation();
+            };
             
             create_tab = (function ()
             {
@@ -120,31 +157,101 @@ $(document).ready(function ()
         }());
     }());
     
-    get_assets = function ()
+    /**
+     * Create tile editor (tab 2)
+     */
+    (function ()
     {
-        var ajax = new window.XMLHttpRequest();
+        var draw_tile,
+            tile_select  = document.createElement("select"),
+            tile_options = document.createElement("div"),
+            tile_canvas  = document.createElement("canvas"),
+            tile_canvas_cx;
         
-        ajax.open("GET", "/api?action=get_assets");
+        tile_canvas_cx = tile_canvas.getContext("2d");
         
-        ajax.addEventListener("load", function ()
+        tabs[2].appendChild(tile_select);
+        tabs[2].appendChild(tile_options);
+        tabs[2].appendChild(tile_canvas);
+        
+        editor_resize.attach(function (e)
         {
-            var assests = [],
-                i,
-                len;
-            
-            try {
-                assests = JSON.parse(ajax.responseText);
-            } catch (e) {}
-            
-            len = assests.length;
-            
-            for (i = 0; i < len; i += 1) {
-                tabs[2].innerHTML += "<img src=\"/assets/" + assests[i].replace(/"/g, '\\"') + "\">";
-            }
+            tile_canvas.setAttribute("width",  e.width);
+            tile_canvas.setAttribute("height", e.height - tile_canvas.offsetTop);
+            draw_tile();
         });
         
-        ajax.send();
-    };
+        get_assets = function ()
+        {
+            var ajax = new window.XMLHttpRequest(),
+                img = document.createElement("img"),
+                load_tile;
+            
+            draw_tile = function ()
+            {
+                /// Don't attempt to draw the image if it has not been set yet.
+                if (img.src) {
+                    tile_canvas_cx.clearRect(0, 0, tile_canvas.width, tile_canvas.height);
+                    tile_canvas_cx.drawImage(img, 0, 0);
+                }
+            };
+            
+            load_tile = (function ()
+            {
+                var last_item;
+                
+                return function (which)
+                {
+                    if (which !== last_item) {
+                        last_item = which;
+                        img.onload = draw_tile;
+                        img.src = "/assets/" + which;
+                    }
+                }
+            }());
+            
+            tile_select.onchange = function ()
+            {
+                load_tile(tile_select.value);
+            };
+            
+            tile_select.onkeyup = function ()
+            {
+                load_tile(tile_select.value);
+            };
+            
+            ajax.open("GET", "/api?action=get_assets");
+            
+            ajax.addEventListener("load", function ()
+            {
+                var assests = [],
+                    i,
+                    len;
+                
+                try {
+                    assests = JSON.parse(ajax.responseText);
+                } catch (e) {}
+                
+                assests.sort();
+                
+                len = assests.length;
+                
+                tile_select.options.length = 0;
+                
+                for (i = 0; i < len; i += 1) {
+                    ///NOTE: new Option(text, value, default_selected, selected);
+                    tile_select.options[tile_select.options.length] = new Option(assests[i], assests[i], false, false);
+                    
+                    /// Set the initial size of the canvas.
+                    editor_resize.trigger({height: editor.offsetHeight, width: editor.offsetWidth});
+                    
+                    load_tile(tile_select.value);
+                }
+            });
+            
+            ajax.send();
+        };
+    }());
     
     get_assets();
     
@@ -185,8 +292,8 @@ $(document).ready(function ()
             
             function upload_files()
             {
-                var file;
-                var formData = new FormData();
+                var file,
+                    formData = new FormData();
                 
                 for (var i = 0, file; file = files[i]; i += 1) {
                     formData.append(file.name, file);
@@ -198,7 +305,8 @@ $(document).ready(function ()
                 
                 ajax.addEventListener("load", function ()
                 {
-                    console.log("uploaded");
+                    /// Update the assets list.
+                    get_assets();
                 });
                 
                 ajax.send(formData);
