@@ -2,9 +2,9 @@ document.addEventListener("DOMContentLoaded", function ()
 {
     "use strict";
     
-    var bg_el = document.getElementById("bg"),
+    var bg_el = document.createElement("canvas"),
         bg_context,
-        editor = document.getElementById("editor"),
+        editor = document.createElement("div"),
         game_name = "Pioneer",
         get_assets,
         tabs = [],
@@ -17,6 +17,10 @@ document.addEventListener("DOMContentLoaded", function ()
         bg_el.setAttribute("height", window.innerHeight);
     }
     
+    editor.className = "editor";
+    
+    document.body.appendChild(bg_el);
+    document.body.appendChild(editor);
     
     bg_context = bg_el.getContext("2d");
     
@@ -28,7 +32,7 @@ document.addEventListener("DOMContentLoaded", function ()
         var pos = window.localStorage.getItem("editor_pos");
         
         if (!pos) {
-            pos = {top: 10, right: 10, width: 300, bottom: 10};
+            pos = {top: 10, right: 10, width: 350, bottom: 10};
         }
         
         editor.style.top    = pos.top    + "px";
@@ -129,16 +133,30 @@ document.addEventListener("DOMContentLoaded", function ()
     (function ()
     {
         var draw_tile,
-            tile_select  = document.createElement("select"),
-            tile_options = document.createElement("div"),
-            tile_canvas  = document.createElement("canvas"),
+            tile_select    = document.createElement("select"),
+            tile_options   = document.createElement("div"),
+            tile_container = document.createElement("div"),
+            tile_canvas    = document.createElement("canvas"),
             tile_canvas_cx;
         
         tile_canvas_cx = tile_canvas.getContext("2d");
         
+        tile_canvas.className = "checkered";
+        tile_container.className = "tile_container";
+        tile_container.appendChild(tile_canvas);
+        
+        
+        ///NOTE: A delay is needed to let it get attached to the DOM.
+        window.setTimeout(function ()
+        {
+            /// Set the top to the current position and bottom to the bottom of the parent div..
+            tile_container.style.top = tile_container.offsetTop + "px";
+            tile_container.style.bottom = 0;
+        }, 0);
+        
         tabs[2].appendChild(tile_select);
         tabs[2].appendChild(tile_options);
-        tabs[2].appendChild(tile_canvas);
+        tabs[2].appendChild(tile_container);
         
         tile_options.innerHTML = "Auto split:";
         

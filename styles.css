@@ -5,19 +5,23 @@ html, body {
     overflow: hidden;
     font-family: "Bitstream Vera Serif";
 }
-#bg {
 
-}
-
-#editor {
+.editor {
     border: 1px #ddd solid;
     border-radius: 3px;
     position: fixed!important;
-    resize: both;
     background: rgba(255, 255, 255, .8);
+}
+
+.tile_container {
+    width: 100%;
+    position: absolute;
     overflow: scroll;
 }
 
+.checkered {
+    background: url("/checkers.png");
+}
 
 .ui-resizable-handle { position: absolute;font-size: 0.1px; display: block; }
 .ui-resizable-disabled .ui-resizable-handle, .ui-resizable-autohide .ui-resizable-handle { display: none; }
@@ -34,7 +38,7 @@ html, body {
 #tabs {
     height: 100%;
 }
-#tabs div {
+#tabs > div {
     /* Make sure the pages appear below the tabs*/
     clear: both;
     width: 100%;
