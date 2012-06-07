@@ -5,7 +5,6 @@ document.addEventListener("DOMContentLoaded", function ()
     var bg_el = document.getElementById("bg"),
         bg_context,
         editor = document.getElementById("editor"),
-        editor_resize,
         game_name = "Pioneer",
         get_assets,
         tabs = [],
@@ -24,29 +23,6 @@ document.addEventListener("DOMContentLoaded", function ()
     window.onresize = resize_canvas;
     resize_canvas();
     
-    editor_resize = (function ()
-    {
-        var functions = [];
-        
-        return {
-            attach: function (func)
-            {
-                if (typeof func === "function") {
-                    functions[functions.length] = func;
-                    return true;
-                }
-                return false;
-            },
-            trigger: function (e)
-            {
-                functions.forEach(function (func)
-                {
-                    func(e);
-                });
-            }
-        };
-    }());
-    
     (function ()
     {
         var pos = window.localStorage.getItem("editor_pos");
@@ -59,16 +35,6 @@ document.addEventListener("DOMContentLoaded", function ()
         editor.style.right  = pos.right  + "px";
         editor.style.bottom = pos.bottom + "px";
         editor.style.width  = pos.width  + "px";
-        
-        ///NOTE: It does not work without draggable (even though it cannot be dragged).
-        $(editor).draggable().resizable({
-            handles: "all",
-            resize: function (e, ui)
-            {
-                editor_resize.trigger(ui.size);
-            }
-        });
-        
         
         /**
          * Create tabs
@@ -174,12 +140,7 @@ document.addEventListener("DOMContentLoaded", function ()
         tabs[2].appendChild(tile_options);
         tabs[2].appendChild(tile_canvas);
         
-        editor_resize.attach(function (e)
-        {
-            tile_canvas.setAttribute("width",  e.width);
-            tile_canvas.setAttribute("height", e.height - tile_canvas.offsetTop);
-            draw_tile();
-        });
+        tile_options.innerHTML = "Auto split:";
         
         get_assets = function ()
         {
@@ -204,7 +165,12 @@ document.addEventListener("DOMContentLoaded", function ()
                 {
                     if (which !== last_item) {
                         last_item = which;
-                        img.onload = draw_tile;
+                        img.onload = function ()
+                        {
+                            tile_canvas.setAttribute("width",  img.width);
+                            tile_canvas.setAttribute("height", img.height);
+                            draw_tile();
+                        };
                         img.src = "/assets/" + which;
                     }
                 }
@@ -241,9 +207,6 @@ document.addEventListener("DOMContentLoaded", function ()
                 for (i = 0; i < len; i += 1) {
                     ///NOTE: new Option(text, value, default_selected, selected);
                     tile_select.options[tile_select.options.length] = new Option(assests[i], assests[i], false, false);
-                    
-                    /// Set the initial size of the canvas.
-                    editor_resize.trigger({height: editor.offsetHeight, width: editor.offsetWidth});
                     
                     load_tile(tile_select.value);
                 }

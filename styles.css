@@ -15,6 +15,7 @@ html, body {
     position: fixed!important;
     resize: both;
     background: rgba(255, 255, 255, .8);
+    overflow: scroll;
 }
 
 
