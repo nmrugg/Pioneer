@@ -158,6 +158,7 @@ document.addEventListener("DOMContentLoaded", function ()
         tabs[2].appendChild(tile_options);
         tabs[2].appendChild(tile_container);
         
+        
         /// Make options
         (function ()
         {
@@ -165,11 +166,30 @@ document.addEventListener("DOMContentLoaded", function ()
                 size_box = document.createElement("input"),
                 snap_box = document.createElement("input");
             
+            function split_dim(str)
+            {
+                var split,
+                    val;
+                
+                if (!str || !str.split) {
+                    val = {x: 1, y: 1};
+                } else {
+                    split = str.split(/\s*x\s*/);
+                    if (split.length < 2) {
+                        val = {x: Number(split[0]), y: Number(split[0])};
+                    } else {
+                        val = {x: Number(split[0]), y: Number(split[1])};
+                    }
+                }
+                
+                return val;
+            }
+            
             snap_box.type = "text";
             size_box.type = "text";
             
-            snap_box.value = 32;
-            size_box.value = 32;
+            snap_box.value = "32 x 32";
+            size_box.value = "32 x 32";
             
             auto_split.textContent = "Auto Split";
             
@@ -180,16 +200,54 @@ document.addEventListener("DOMContentLoaded", function ()
             tile_options.appendChild(document.createTextNode("Size: "));
             tile_options.appendChild(size_box);
             
+            tile_canvas.onmousemove = function (e)
+            {
+                var canvas_pos = tile_canvas.getClientRects()[0],
+                    size = split_dim(size_box.value),
+                    snap = split_dim(snap_box.value),
+                    x,
+                    y;
+                
+                x = e.clientX - canvas_pos.left;
+                y = e.clientY - canvas_pos.top;
+                
+                if (snap.x > 0) {
+                    x = x - (x % snap.x);
+                }
+                
+                if (snap.y > 0) {
+                    y = y - (y % snap.y);
+                }
+                
+                if (size < 1) {
+                    size = 1
+                }
+                
+                draw_tile();
+                
+                tile_canvas_cx.beginPath();
+                tile_canvas_cx.lineWidth = 1;
+                tile_canvas_cx.mozDash        = [3, 4];
+                tile_canvas_cx.webkitLineDash = [3, 4];
+                tile_canvas_cx.strokeStyle = "rgba(40,300,115,.8)";
+                
+                tile_canvas_cx.strokeRect(x + .5, y + .5, size.x, size.y);
+            };
+            
             /**
              * Draw grid when hovering over the Auto Split button.
              */
             auto_split.onmouseover = function ()
             {
                 var height = Number(tile_canvas.height),
-                    snap   = Number(snap_box.value),
+                    snap   = split_dim(snap_box.value),
                     width  = Number(tile_canvas.width),
                     x,
                     y;
+                
+                if (snap.x <= 0 || snap.y <= 0) {
+                    return;
+                }
                 
                 tile_canvas_cx.beginPath();
                 tile_canvas_cx.lineWidth = 1;
@@ -199,11 +257,11 @@ document.addEventListener("DOMContentLoaded", function ()
                 
                 ///NOTE: adding .5 makes the line draw more cleanly.
                 
-                for (x = snap; x < width; x += snap) {
+                for (x = snap.x; x < width; x += snap.x) {
                     tile_canvas_cx.moveTo(x + .5, 0);
                     tile_canvas_cx.lineTo(x + .5, height);
                 }
-                for (y = snap; y < height; y += snap) {
+                for (y = snap.y; y < height; y += snap.y) {
                     tile_canvas_cx.moveTo(0, y + .5);
                     tile_canvas_cx.lineTo(width, y + .5);
                 }
