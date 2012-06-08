@@ -3,7 +3,7 @@ html, body {
     height: 100%;
     margin: 0;
     overflow: hidden;
-    font-family: "Bitstream Vera Serif";
+    font-family: "Bitstream Vera Serif", serif;
 }
 
 .editor {
@@ -21,6 +21,7 @@ html, body {
 
 .checkered {
     background: url("/checkers.png");
+    background-attachment:fixed;
 }
 
 .ui-resizable-handle { position: absolute;font-size: 0.1px; display: block; }
