@@ -118,8 +118,8 @@ document.addEventListener("DOMContentLoaded", function ()
                 };
             }());
             
-            tabs[tabs.length] = create_tab("Draw",     tab_container, ul);
-            tabs[tabs.length] = create_tab("Create",   tab_container, ul);
+            tabs[tabs.length] = create_tab("Brushes",     tab_container, ul);
+            tabs[tabs.length] = create_tab("Tiles",   tab_container, ul);
             tabs[tabs.length] = create_tab("Tilesets", tab_container, ul);
             
             editor.appendChild(tab_container);
@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", function ()
             tile_options.appendChild(document.createTextNode("Size: "));
             tile_options.appendChild(size_box);
             
-            tile_canvas.onmousemove = function (e)
+            function get_selection_rec(e)
             {
                 var canvas_pos = tile_canvas.getClientRects()[0],
                     size = split_dim(size_box.value),
@@ -214,14 +214,26 @@ document.addEventListener("DOMContentLoaded", function ()
                 if (snap.x > 0) {
                     x = x - (x % snap.x);
                 }
-                
                 if (snap.y > 0) {
                     y = y - (y % snap.y);
                 }
                 
-                if (size < 1) {
-                    size = 1
+                if (size.x < 1) {
+                    size.x = 1;
                 }
+                if (size.y < 1) {
+                    size.y = 1;
+                }
+                
+                return {x: x, y: y, w: size.x, h: size.y};
+            }
+            
+            /**
+             * Draw the tile selection square.
+             */
+            tile_canvas.onmousemove = function (e)
+            {
+                var rect = get_selection_rec(e);
                 
                 draw_tile();
                 
@@ -231,7 +243,22 @@ document.addEventListener("DOMContentLoaded", function ()
                 tile_canvas_cx.webkitLineDash = [3, 4];
                 tile_canvas_cx.strokeStyle = "rgba(40,300,115,.8)";
                 
-                tile_canvas_cx.strokeRect(x + .5, y + .5, size.x, size.y);
+                tile_canvas_cx.strokeRect(rect.x + .5, rect.y + .5, rect.w, rect.h);
+            };
+            
+            tile_canvas.onclick = function (e)
+            {
+                var ajax = new window.XMLHttpRequest(),
+                    rect = get_selection_rec(e);;
+                
+                ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tile_select.value, tiles: [rect]}));
+                
+                ajax.addEventListener("load", function ()
+                {
+                    console.log(ajax.responseText);
+                });
+                
+                ajax.send();
             };
             
             /**
@@ -248,6 +275,8 @@ document.addEventListener("DOMContentLoaded", function ()
                 if (snap.x <= 0 || snap.y <= 0) {
                     return;
                 }
+                
+                draw_tile();
                 
                 tile_canvas_cx.beginPath();
                 tile_canvas_cx.lineWidth = 1;
@@ -274,6 +303,37 @@ document.addEventListener("DOMContentLoaded", function ()
             auto_split.onmouseout = function ()
             {
                 draw_tile();
+            };
+            
+            /**
+             * Split up all of the tiles.
+             */
+            auto_split.onclick = function ()
+            {
+                var ajax = new window.XMLHttpRequest(),
+                    tiles = [],
+                    
+                    height = Number(tile_canvas.height),
+                    snap   = split_dim(snap_box.value),
+                    width  = Number(tile_canvas.width),
+                    x,
+                    y;
+                
+                for (y = 0; y < height; y += snap.y) {
+                    for (x = 0; x < width; x += snap.x) {
+                        tiles[tiles.length] = {x: x, y: y, w: snap.x, h: snap.y};
+                    }
+                    
+                }
+                
+                ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tile_select.value, tiles: tiles}));
+                
+                ajax.addEventListener("load", function ()
+                {
+                    console.log(ajax.responseText);
+                });
+                
+                ajax.send();
             };
         }());
         
@@ -413,10 +473,10 @@ document.addEventListener("DOMContentLoaded", function ()
             upload_files();
         }
         
-        bg_el.addEventListener("dragenter", ignore_event, false);
-        bg_el.addEventListener("dragexit",  ignore_event, false);
-        bg_el.addEventListener("dragover",  ignore_event, false);
-        bg_el.addEventListener("drop",      drop,         false);
+        editor.addEventListener("dragenter", ignore_event, false);
+        editor.addEventListener("dragexit",  ignore_event, false);
+        editor.addEventListener("dragover",  ignore_event, false);
+        editor.addEventListener("drop",      drop,         false);
     }());
     
     document.title = game_name;

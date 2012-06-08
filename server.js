@@ -16,6 +16,61 @@ function get_assets(response)
     });
 }
 
+function get_tiles(response)
+{
+    response.writeHead(200, {"Content-Type": "application/json"});
+    fs.readFile("data/tiles.json", "utf8", function (err, tiles)
+    {
+        if (!tiles) {
+            tiles = "{}";
+        }
+        response.end(tiles);
+    });
+}
+
+
+function add_tiles(response, data)
+{
+    response.writeHead(200, {"Content-Type": "application/json"});
+    fs.readFile("data/tiles.json", "utf8", function (err, cur_tiles)
+    {
+        var tiles = {},
+            tiles_str,
+            this_tile;
+        
+        if (cur_tiles) {
+            try {
+                tiles = JSON.parse(cur_tiles);
+            } catch (e) {}
+        }
+        
+        if (data && data.img && data.tiles && data.tiles.forEach) {
+            if (!tiles[data.img]) {
+                tiles[data.img] = [];
+            }
+            
+            this_tile = tiles[data.img];
+            
+            data.tiles.forEach(function (tile)
+            {
+                this_tile[this_tile.length] = tile;
+            })
+        }
+        
+        tiles_str = JSON.stringify(tiles);
+        
+        response.end(tiles_str);
+        
+        ///NOTE: To avoid race conditions, write this file synchronously.
+        fs.writeFileSync("data/tiles.json", tiles_str, "utf8");
+    });
+    
+    try {
+        data = JSON.parse(data);
+    } catch (e) {}
+}
+
+
 require("http").createServer(function (request, response)
 {
     var form,
@@ -53,9 +108,13 @@ require("http").createServer(function (request, response)
         });
     } else if (url_parts.pathname === "/api") {
         query = qs.parse(url_parts.query);
+        
         switch (query.action) {
         case "get_assets":
             get_assets(response);
+            return;
+        case "add_tiles":
+            add_tiles(response, query.data);
             return;
         }
     } else {
