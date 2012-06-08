@@ -158,7 +158,66 @@ document.addEventListener("DOMContentLoaded", function ()
         tabs[2].appendChild(tile_options);
         tabs[2].appendChild(tile_container);
         
-        tile_options.innerHTML = "Auto split:";
+        /// Make options
+        (function ()
+        {
+            var auto_split = document.createElement("button"),
+                size_box = document.createElement("input"),
+                snap_box = document.createElement("input");
+            
+            snap_box.type = "text";
+            size_box.type = "text";
+            
+            snap_box.value = 32;
+            size_box.value = 32;
+            
+            auto_split.textContent = "Auto Split";
+            
+            tile_options.appendChild(document.createTextNode("Snap: "));
+            tile_options.appendChild(snap_box);
+            tile_options.appendChild(auto_split);
+            tile_options.appendChild(document.createElement("br"));
+            tile_options.appendChild(document.createTextNode("Size: "));
+            tile_options.appendChild(size_box);
+            
+            /**
+             * Draw grid when hovering over the Auto Split button.
+             */
+            auto_split.onmouseover = function ()
+            {
+                var height = Number(tile_canvas.height),
+                    snap   = Number(snap_box.value),
+                    width  = Number(tile_canvas.width),
+                    x,
+                    y;
+                
+                tile_canvas_cx.beginPath();
+                tile_canvas_cx.lineWidth = 1;
+                tile_canvas_cx.mozDash        = [3, 4];
+                tile_canvas_cx.webkitLineDash = [3, 4];
+                tile_canvas_cx.strokeStyle = "rgba(0,0,0,.5)";
+                
+                ///NOTE: adding .5 makes the line draw more cleanly.
+                
+                for (x = snap; x < width; x += snap) {
+                    tile_canvas_cx.moveTo(x + .5, 0);
+                    tile_canvas_cx.lineTo(x + .5, height);
+                }
+                for (y = snap; y < height; y += snap) {
+                    tile_canvas_cx.moveTo(0, y + .5);
+                    tile_canvas_cx.lineTo(width, y + .5);
+                }
+                
+                tile_canvas_cx.stroke();
+            };
+            /**
+             * Remove the grid when the mouse moves off of the button.
+             */
+            auto_split.onmouseout = function ()
+            {
+                draw_tile();
+            };
+        }());
         
         get_assets = function ()
         {
