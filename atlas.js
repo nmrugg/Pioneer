@@ -178,6 +178,10 @@ document.addEventListener("DOMContentLoaded", function ()
         
         tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
         
+        /// Hide the canvas until it is read to be drawn on.
+        tilesheet_canvas.setAttribute("width",  0);
+        tilesheet_canvas.setAttribute("height", 0);
+        
         tilesheet_canvas.className = "checkered";
         tilesheet_container.className = "tilesheet_container";
         tilesheet_container.appendChild(tilesheet_canvas);
