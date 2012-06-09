@@ -135,7 +135,13 @@ document.addEventListener("DOMContentLoaded", function ()
         var tile_canvas = document.createElement("canvas"),
             tile_select = document.createElement("select");
         
-        function get_tiles()
+        tabs[1].appendChild(tile_select);
+        tabs[1].appendChild(tile_canvas);
+        
+        /**
+         * Get tiles at start up.
+         */
+        (function get_tiles()
         {
             var ajax = new window.XMLHttpRequest();
             
@@ -155,14 +161,24 @@ document.addEventListener("DOMContentLoaded", function ()
             });
             
             ajax.send();
-        }
+        }());
         
-        editor.update_tiles = function ()
+        editor.update_tile_select = function ()
         {
+            /// Remove assets.
+            tile_select.options.length = 0;
             
+            ///NOTE: new Option(text, value, default_selected, selected);
+            tile_select.options[tile_select.options.length] = new Option("All", 0, true, false);
+            
+            editor.assets.forEach(function (asset)
+            {
+                ///NOTE: new Option(text, value, default_selected, selected);
+                tile_select.options[tile_select.options.length] = new Option(asset, asset, false, false);
+            });
         };
         
-        get_tiles();
+        
     }());
     
     /**
@@ -454,29 +470,28 @@ document.addEventListener("DOMContentLoaded", function ()
             
             ajax.addEventListener("load", function ()
             {
-                var assests = [],
-                    i,
-                    len;
+                var assets = [];
                 
                 try {
-                    assests = JSON.parse(ajax.responseText);
+                    assets = JSON.parse(ajax.responseText);
                 } catch (e) {}
                 
-                assests.sort();
+                assets.sort();
                 
                 /// Store in the editor object so that other functions can get access to it.
-                editor.assests = assests;
-                
-                len = assests.length;
+                editor.assets = assets;
                 
                 tilesheet_select.options.length = 0;
                 
-                for (i = 0; i < len; i += 1) {
+                editor.assets.forEach(function (asset)
+                {
                     ///NOTE: new Option(text, value, default_selected, selected);
-                    tilesheet_select.options[tilesheet_select.options.length] = new Option(assests[i], assests[i], false, false);
-                    
-                    load_tile(tilesheet_select.value);
-                }
+                    tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, false);
+                });
+                
+                load_tile(tilesheet_select.value);
+                
+                editor.update_tile_select();
             });
             
             ajax.send();
