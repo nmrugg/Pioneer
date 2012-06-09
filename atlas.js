@@ -4,11 +4,9 @@ document.addEventListener("DOMContentLoaded", function ()
     
     var bg_el = document.createElement("canvas"),
         bg_context,
-        editor = document.createElement("div"),
+        editor = {},
         game_name = "Pioneer",
-        get_assets,
-        tabs = [],
-        tilesheet = document.createElement("img");
+        tabs = [];
     
     function resize_canvas(e)
     {
@@ -17,10 +15,12 @@ document.addEventListener("DOMContentLoaded", function ()
         bg_el.setAttribute("height", window.innerHeight);
     }
     
-    editor.className = "editor";
+    editor.el = document.createElement("div");
+    
+    editor.el.className = "editor";
     
     document.body.appendChild(bg_el);
-    document.body.appendChild(editor);
+    document.body.appendChild(editor.el);
     
     bg_context = bg_el.getContext("2d");
     
@@ -35,10 +35,10 @@ document.addEventListener("DOMContentLoaded", function ()
             pos = {top: 10, right: 10, width: 350, bottom: 10};
         }
         
-        editor.style.top    = pos.top    + "px";
-        editor.style.right  = pos.right  + "px";
-        editor.style.bottom = pos.bottom + "px";
-        editor.style.width  = pos.width  + "px";
+        editor.el.style.top    = pos.top    + "px";
+        editor.el.style.right  = pos.right  + "px";
+        editor.el.style.bottom = pos.bottom + "px";
+        editor.el.style.width  = pos.width  + "px";
         
         /**
          * Create tabs
@@ -122,9 +122,47 @@ document.addEventListener("DOMContentLoaded", function ()
             tabs[tabs.length] = create_tab("Tiles",   tab_container, ul);
             tabs[tabs.length] = create_tab("Tilesets", tab_container, ul);
             
-            editor.appendChild(tab_container);
+            editor.el.appendChild(tab_container);
             
         }());
+    }());
+    
+    /**
+     * Create tab 1 (Tiles)
+     */
+    (function ()
+    {
+        var tile_canvas = document.createElement("canvas"),
+            tile_select = document.createElement("select");
+        
+        function get_tiles()
+        {
+            var ajax = new window.XMLHttpRequest();
+            
+            ajax.open("GET", "/api?action=get_tiles");
+            
+            ajax.addEventListener("load", function ()
+            {
+                var cur_tiles = {};
+                
+                try {
+                    cur_tiles = JSON.parse(ajax.responseText);
+                } catch (e) {}
+                
+                editor.tiles = cur_tiles;
+                
+                window.setTimeout(editor.update_tiles, 50);
+            });
+            
+            ajax.send();
+        }
+        
+        editor.update_tiles = function ()
+        {
+            
+        };
+        
+        get_tiles();
     }());
     
     /**
@@ -132,39 +170,38 @@ document.addEventListener("DOMContentLoaded", function ()
      */
     (function ()
     {
-        var draw_tile,
-            tile_select    = document.createElement("select"),
-            tile_options   = document.createElement("div"),
-            tile_container = document.createElement("div"),
-            tile_canvas    = document.createElement("canvas"),
-            tile_canvas_cx;
+        var tilesheet_canvas    = document.createElement("canvas"),
+            tilesheet_canvas_cx,
+            tilesheet_container = document.createElement("div"),
+            tilesheet_options   = document.createElement("div"),
+            tilesheet_select    = document.createElement("select");
         
-        tile_canvas_cx = tile_canvas.getContext("2d");
+        tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
         
-        tile_canvas.className = "checkered";
-        tile_container.className = "tile_container";
-        tile_container.appendChild(tile_canvas);
+        tilesheet_canvas.className = "checkered";
+        tilesheet_container.className = "tilesheet_container";
+        tilesheet_container.appendChild(tilesheet_canvas);
         
         
         ///NOTE: A delay is needed to let it get attached to the DOM.
         window.setTimeout(function ()
         {
             /// Set the top to the current position and bottom to the bottom of the parent div..
-            tile_container.style.top = tile_container.offsetTop + "px";
-            tile_container.style.bottom = 0;
+            tilesheet_container.style.top = tilesheet_container.offsetTop + "px";
+            tilesheet_container.style.bottom = 0;
         }, 0);
         
-        tabs[2].appendChild(tile_select);
-        tabs[2].appendChild(tile_options);
-        tabs[2].appendChild(tile_container);
+        tabs[2].appendChild(tilesheet_select);
+        tabs[2].appendChild(tilesheet_options);
+        tabs[2].appendChild(tilesheet_container);
         
         
-        /// Make options
+        /// Make tilesheet options
         (function ()
         {
             var auto_split = document.createElement("button"),
-                size_box = document.createElement("input"),
-                snap_box = document.createElement("input");
+                size_box   = document.createElement("input"),
+                snap_box   = document.createElement("input");
             
             function split_dim(str)
             {
@@ -193,16 +230,16 @@ document.addEventListener("DOMContentLoaded", function ()
             
             auto_split.textContent = "Auto Split";
             
-            tile_options.appendChild(document.createTextNode("Snap: "));
-            tile_options.appendChild(snap_box);
-            tile_options.appendChild(auto_split);
-            tile_options.appendChild(document.createElement("br"));
-            tile_options.appendChild(document.createTextNode("Size: "));
-            tile_options.appendChild(size_box);
+            tilesheet_options.appendChild(document.createTextNode("Snap: "));
+            tilesheet_options.appendChild(snap_box);
+            tilesheet_options.appendChild(auto_split);
+            tilesheet_options.appendChild(document.createElement("br"));
+            tilesheet_options.appendChild(document.createTextNode("Size: "));
+            tilesheet_options.appendChild(size_box);
             
             function get_selection_rec(e)
             {
-                var canvas_pos = tile_canvas.getClientRects()[0],
+                var canvas_pos = tilesheet_canvas.getClientRects()[0],
                     size = split_dim(size_box.value),
                     snap = split_dim(snap_box.value),
                     x,
@@ -231,31 +268,41 @@ document.addEventListener("DOMContentLoaded", function ()
             /**
              * Draw the tile selection square.
              */
-            tile_canvas.onmousemove = function (e)
+            tilesheet_canvas.onmousemove = function (e)
             {
                 var rect = get_selection_rec(e);
                 
-                draw_tile();
+                editor.draw_tilesheet();
                 
-                tile_canvas_cx.beginPath();
-                tile_canvas_cx.lineWidth = 1;
-                tile_canvas_cx.mozDash        = [3, 4];
-                tile_canvas_cx.webkitLineDash = [3, 4];
-                tile_canvas_cx.strokeStyle = "rgba(40,300,115,.8)";
+                tilesheet_canvas_cx.beginPath();
+                tilesheet_canvas_cx.lineWidth      = 1;
+                tilesheet_canvas_cx.mozDash        = [3, 4];
+                tilesheet_canvas_cx.webkitLineDash = [3, 4];
+                tilesheet_canvas_cx.strokeStyle    = "rgba(40,300,115,.8)";
                 
-                tile_canvas_cx.strokeRect(rect.x + .5, rect.y + .5, rect.w, rect.h);
+                tilesheet_canvas_cx.strokeRect(rect.x + .5, rect.y + .5, rect.w, rect.h);
             };
             
-            tile_canvas.onclick = function (e)
+            tilesheet_canvas.onclick = function (e)
             {
                 var ajax = new window.XMLHttpRequest(),
-                    rect = get_selection_rec(e);;
+                    rect = get_selection_rec(e);
                 
-                ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tile_select.value, tiles: [rect]}));
+                ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tilesheet_select.value, tiles: [rect]}));
                 
                 ajax.addEventListener("load", function ()
                 {
-                    console.log(ajax.responseText);
+                    var cur_tiles = {};
+                    
+                    try {
+                        cur_tiles = JSON.parse(ajax.responseText);
+                    } catch (e) {}
+                    
+                    editor.tiles = cur_tiles;
+                    
+                    editor.draw_tilesheet();
+                    
+                    window.setTimeout(editor.update_tiles, 50);
                 });
                 
                 ajax.send();
@@ -266,9 +313,9 @@ document.addEventListener("DOMContentLoaded", function ()
              */
             auto_split.onmouseover = function ()
             {
-                var height = Number(tile_canvas.height),
+                var height = Number(tilesheet_canvas.height),
                     snap   = split_dim(snap_box.value),
-                    width  = Number(tile_canvas.width),
+                    width  = Number(tilesheet_canvas.width),
                     x,
                     y;
                 
@@ -276,33 +323,33 @@ document.addEventListener("DOMContentLoaded", function ()
                     return;
                 }
                 
-                draw_tile();
+                editor.draw_tilesheet();
                 
-                tile_canvas_cx.beginPath();
-                tile_canvas_cx.lineWidth = 1;
-                tile_canvas_cx.mozDash        = [3, 4];
-                tile_canvas_cx.webkitLineDash = [3, 4];
-                tile_canvas_cx.strokeStyle = "rgba(0,0,0,.5)";
+                tilesheet_canvas_cx.beginPath();
+                tilesheet_canvas_cx.lineWidth      = 1;
+                tilesheet_canvas_cx.mozDash        = [3, 4];
+                tilesheet_canvas_cx.webkitLineDash = [3, 4];
+                tilesheet_canvas_cx.strokeStyle    = "rgba(0,0,0,.5)";
                 
                 ///NOTE: adding .5 makes the line draw more cleanly.
                 
                 for (x = snap.x; x < width; x += snap.x) {
-                    tile_canvas_cx.moveTo(x + .5, 0);
-                    tile_canvas_cx.lineTo(x + .5, height);
+                    tilesheet_canvas_cx.moveTo(x + .5, 0);
+                    tilesheet_canvas_cx.lineTo(x + .5, height);
                 }
                 for (y = snap.y; y < height; y += snap.y) {
-                    tile_canvas_cx.moveTo(0, y + .5);
-                    tile_canvas_cx.lineTo(width, y + .5);
+                    tilesheet_canvas_cx.moveTo(0, y + .5);
+                    tilesheet_canvas_cx.lineTo(width, y + .5);
                 }
                 
-                tile_canvas_cx.stroke();
+                tilesheet_canvas_cx.stroke();
             };
             /**
              * Remove the grid when the mouse moves off of the button.
              */
             auto_split.onmouseout = function ()
             {
-                draw_tile();
+                editor.draw_tilesheet();
             };
             
             /**
@@ -313,9 +360,9 @@ document.addEventListener("DOMContentLoaded", function ()
                 var ajax = new window.XMLHttpRequest(),
                     tiles = [],
                     
-                    height = Number(tile_canvas.height),
+                    height = Number(tilesheet_canvas.height),
                     snap   = split_dim(snap_box.value),
-                    width  = Number(tile_canvas.width),
+                    width  = Number(tilesheet_canvas.width),
                     x,
                     y;
                 
@@ -326,29 +373,46 @@ document.addEventListener("DOMContentLoaded", function ()
                     
                 }
                 
-                ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tile_select.value, tiles: tiles}));
+                ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tilesheet_select.value, tiles: tiles}));
                 
                 ajax.addEventListener("load", function ()
                 {
-                    console.log(ajax.responseText);
+                    var cur_tiles = {};
+                    
+                    try {
+                        cur_tiles = JSON.parse(ajax.responseText);
+                    } catch (e) {}
+                    
+                    editor.tiles = cur_tiles;
+                    
+                    window.setTimeout(editor.update_tiles, 50);
                 });
                 
                 ajax.send();
             };
         }());
         
-        get_assets = function ()
+        editor.get_assets = function ()
         {
             var ajax = new window.XMLHttpRequest(),
-                img = document.createElement("img"),
+                img  = document.createElement("img"),
                 load_tile;
             
-            draw_tile = function ()
+            editor.draw_tilesheet = function ()
             {
                 /// Don't attempt to draw the image if it has not been set yet.
                 if (img.src) {
-                    tile_canvas_cx.clearRect(0, 0, tile_canvas.width, tile_canvas.height);
-                    tile_canvas_cx.drawImage(img, 0, 0);
+                    /// First, clear the canvas.
+                    tilesheet_canvas_cx.clearRect(0, 0, tilesheet_canvas.width, tilesheet_canvas.height);
+                    tilesheet_canvas_cx.drawImage(img, 0, 0);
+                    
+                    if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
+                        tilesheet_canvas_cx.fillStyle = "rgba(0,0,0, .4)";
+                        editor.tiles[editor.selected_tilesheet].forEach(function (tile)
+                        {
+                            tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
+                        });
+                    }
                 }
             };
             
@@ -362,23 +426,24 @@ document.addEventListener("DOMContentLoaded", function ()
                         last_item = which;
                         img.onload = function ()
                         {
-                            tile_canvas.setAttribute("width",  img.width);
-                            tile_canvas.setAttribute("height", img.height);
-                            draw_tile();
+                            tilesheet_canvas.setAttribute("width",  img.width);
+                            tilesheet_canvas.setAttribute("height", img.height);
+                            editor.draw_tilesheet();
                         };
+                        editor.selected_tilesheet = which;
                         img.src = "/assets/" + which;
                     }
                 }
             }());
             
-            tile_select.onchange = function ()
+            tilesheet_select.onchange = function ()
             {
-                load_tile(tile_select.value);
+                load_tile(tilesheet_select.value);
             };
             
-            tile_select.onkeyup = function ()
+            tilesheet_select.onkeyup = function ()
             {
-                load_tile(tile_select.value);
+                load_tile(tilesheet_select.value);
             };
             
             ajax.open("GET", "/api?action=get_assets");
@@ -395,15 +460,18 @@ document.addEventListener("DOMContentLoaded", function ()
                 
                 assests.sort();
                 
+                /// Store in the editor object so that other functions can get access to it.
+                editor.assests = assests;
+                
                 len = assests.length;
                 
-                tile_select.options.length = 0;
+                tilesheet_select.options.length = 0;
                 
                 for (i = 0; i < len; i += 1) {
                     ///NOTE: new Option(text, value, default_selected, selected);
-                    tile_select.options[tile_select.options.length] = new Option(assests[i], assests[i], false, false);
+                    tilesheet_select.options[tilesheet_select.options.length] = new Option(assests[i], assests[i], false, false);
                     
-                    load_tile(tile_select.value);
+                    load_tile(tilesheet_select.value);
                 }
             });
             
@@ -411,8 +479,9 @@ document.addEventListener("DOMContentLoaded", function ()
         };
     }());
     
-    get_assets();
+    editor.get_assets();
     
+
     /**
      * Enabled drag and drop uploading.
      */
@@ -464,7 +533,7 @@ document.addEventListener("DOMContentLoaded", function ()
                 ajax.addEventListener("load", function ()
                 {
                     /// Update the assets list.
-                    get_assets();
+                    editor.get_assets();
                 });
                 
                 ajax.send(formData);
@@ -473,10 +542,10 @@ document.addEventListener("DOMContentLoaded", function ()
             upload_files();
         }
         
-        editor.addEventListener("dragenter", ignore_event, false);
-        editor.addEventListener("dragexit",  ignore_event, false);
-        editor.addEventListener("dragover",  ignore_event, false);
-        editor.addEventListener("drop",      drop,         false);
+        editor.el.addEventListener("dragenter", ignore_event, false);
+        editor.el.addEventListener("dragexit",  ignore_event, false);
+        editor.el.addEventListener("dragover",  ignore_event, false);
+        editor.el.addEventListener("drop",      drop,         false);
     }());
     
     document.title = game_name;

@@ -116,7 +116,13 @@ require("http").createServer(function (request, response)
         case "add_tiles":
             add_tiles(response, query.data);
             return;
+        case "get_tiles":
+            get_tiles(response);
+            return;
         }
+        /// If the action is not valid, simply end.
+        response.end();
+        return;
     } else {
         /// Check to see if the client is trying to access a real file.
         path.exists(request.url.substr(1), function (exists)
