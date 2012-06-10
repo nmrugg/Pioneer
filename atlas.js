@@ -32,13 +32,15 @@ document.addEventListener("DOMContentLoaded", function ()
         var pos = window.localStorage.getItem("editor_pos");
         
         if (!pos) {
-            pos = {top: 10, right: 10, width: 350, bottom: 10};
+            pos = {top: 10, right: 10, bottom: 10};
         }
         
         editor.el.style.top    = pos.top    + "px";
         editor.el.style.right  = pos.right  + "px";
         editor.el.style.bottom = pos.bottom + "px";
-        editor.el.style.width  = pos.width  + "px";
+        if (pos.width) {
+            editor.el.style.width  = pos.width  + "px";
+        }
         
         /**
          * Create tabs
@@ -118,9 +120,9 @@ document.addEventListener("DOMContentLoaded", function ()
                 };
             }());
             
-            tabs[tabs.length] = create_tab("Brushes",     tab_container, ul);
-            tabs[tabs.length] = create_tab("Animations",   tab_container, ul);
-            tabs[tabs.length] = create_tab("Tiles", tab_container, ul);
+            tabs[tabs.length] = create_tab("Brushes",    tab_container, ul);
+            tabs[tabs.length] = create_tab("Animations", tab_container, ul);
+            tabs[tabs.length] = create_tab("Tilesheets", tab_container, ul);
             
             editor.el.appendChild(tab_container);
             
@@ -204,7 +206,7 @@ document.addEventListener("DOMContentLoaded", function ()
             tilesheet_options.appendChild(document.createTextNode("Size: "));
             tilesheet_options.appendChild(size_box);
             
-            function get_selection_rec(e)
+            function get_selection_rec(e, dont_snap)
             {
                 var canvas_pos = tilesheet_canvas.getClientRects()[0],
                     size = split_dim(size_box.value),
@@ -215,11 +217,13 @@ document.addEventListener("DOMContentLoaded", function ()
                 x = e.clientX - canvas_pos.left;
                 y = e.clientY - canvas_pos.top;
                 
-                if (snap.x > 0) {
-                    x = x - (x % snap.x);
-                }
-                if (snap.y > 0) {
-                    y = y - (y % snap.y);
+                if (!dont_snap) {
+                    if (snap.x > 0) {
+                        x = x - (x % snap.x);
+                    }
+                    if (snap.y > 0) {
+                        y = y - (y % snap.y);
+                    }
                 }
                 
                 if (size.x < 1) {
@@ -233,21 +237,56 @@ document.addEventListener("DOMContentLoaded", function ()
             }
             
             /**
-             * Draw the tile selection square.
+             * Draw the tile selection square or highlight a tile.
              */
             tilesheet_canvas.onmousemove = function (e)
             {
-                var rect = get_selection_rec(e);
+                var tile_selected,
+                    rect;
                 
+                function draw_square()
+                {
+                    /// Get the snapped rectangle.
+                    rect = get_selection_rec(e);
+                    
+                    tilesheet_canvas_cx.beginPath();
+                    tilesheet_canvas_cx.lineWidth      = 1;
+                    tilesheet_canvas_cx.mozDash        = [3, 4];
+                    tilesheet_canvas_cx.webkitLineDash = [3, 4];
+                    tilesheet_canvas_cx.strokeStyle    = "rgba(40,300,115,.8)";
+                    
+                    tilesheet_canvas_cx.strokeRect(rect.x + .5, rect.y + .5, rect.w, rect.h);
+                }
+                
+                /// Reset the canvas.
                 editor.draw_tilesheet();
                 
-                tilesheet_canvas_cx.beginPath();
-                tilesheet_canvas_cx.lineWidth      = 1;
-                tilesheet_canvas_cx.mozDash        = [3, 4];
-                tilesheet_canvas_cx.webkitLineDash = [3, 4];
-                tilesheet_canvas_cx.strokeStyle    = "rgba(40,300,115,.8)";
-                
-                tilesheet_canvas_cx.strokeRect(rect.x + .5, rect.y + .5, rect.w, rect.h);
+                if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
+                    /// Check to see if the mouse is hovering over an already created tile.
+                    
+                    rect = get_selection_rec(e, true);
+                    editor.tiles[editor.selected_tilesheet].every(function (tile)
+                    {
+                        if (rect.x >= tile.x && rect.x <= tile.x + tile.w && rect.y >= tile.y && rect.y <= tile.y + tile.h) {
+                            tile_selected = tile;
+                            return false; /// I.e., break.
+                        }
+                        
+                        return true;
+                    });
+                    
+                    if (tile_selected) {
+                        /// Since the mouse is hovering over an already created tile, highlight it.
+                        tilesheet_canvas_cx.fillStyle = "rgba(255,255,255, .4)";
+                        tilesheet_canvas_cx.fillRect(tile_selected.x, tile_selected.y, tile_selected.w, tile_selected.h);
+                    } else {
+                        /// The mouse is not hovering over a tile, so draw the selection box.
+                        draw_square();
+                    }
+                } else {
+                    /// There are no tiles for this image, so draw the selection box.
+                    draw_square();
+                }
             };
             
             tilesheet_canvas.onclick = function (e)
