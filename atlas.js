@@ -236,18 +236,43 @@ document.addEventListener("DOMContentLoaded", function ()
                 return {x: x, y: y, w: size.x, h: size.y};
             }
             
+            function get_hover_tile(mouse_event)
+            {
+                var tile_selected = false,
+                    rect;
+                
+                if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
+                    /// Check to see if the mouse is hovering over an already created tile.
+                    
+                    rect = get_selection_rec(mouse_event, true);
+                    editor.tiles[editor.selected_tilesheet].every(function (tile)
+                    {
+                        if (rect.x >= tile.x && rect.x <= tile.x + tile.w && rect.y >= tile.y && rect.y <= tile.y + tile.h) {
+                            tile_selected = tile;
+                            return false; /// I.e., break.
+                        }
+                        
+                        return true;
+                    });
+                    
+                    return tile_selected;
+                } else {
+                    /// There are no tiles for this image, it cannot hover over anything.
+                    return false;
+                }
+            }
+            
             /**
              * Draw the tile selection square or highlight a tile.
              */
             tilesheet_canvas.onmousemove = function (e)
             {
-                var tile_selected,
-                    rect;
+                var tile_selected;
                 
                 function draw_square()
                 {
                     /// Get the snapped rectangle.
-                    rect = get_selection_rec(e);
+                    var rect = get_selection_rec(e);
                     
                     tilesheet_canvas_cx.beginPath();
                     tilesheet_canvas_cx.lineWidth      = 1;
@@ -262,31 +287,15 @@ document.addEventListener("DOMContentLoaded", function ()
                 /// Reset the canvas.
                 editor.draw_tilesheet();
                 
-                if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
-                    /// Check to see if the mouse is hovering over an already created tile.
-                    
-                    rect = get_selection_rec(e, true);
-                    editor.tiles[editor.selected_tilesheet].every(function (tile)
-                    {
-                        if (rect.x >= tile.x && rect.x <= tile.x + tile.w && rect.y >= tile.y && rect.y <= tile.y + tile.h) {
-                            tile_selected = tile;
-                            return false; /// I.e., break.
-                        }
-                        
-                        return true;
-                    });
-                    
-                    if (tile_selected) {
-                        /// Since the mouse is hovering over an already created tile, highlight it.
-                        tilesheet_canvas_cx.fillStyle = "rgba(255,255,255, .4)";
-                        tilesheet_canvas_cx.fillRect(tile_selected.x, tile_selected.y, tile_selected.w, tile_selected.h);
-                        tilesheet_canvas.style.cursor = "move";
-                    } else {
-                        /// The mouse is not hovering over a tile, so draw the selection box.
-                        draw_square();
-                    }
+                tile_selected = get_hover_tile(e);
+                
+                if (tile_selected) {
+                    /// Since the mouse is hovering over an already created tile, highlight it.
+                    tilesheet_canvas_cx.fillStyle = "rgba(255,255,255, .4)";
+                    tilesheet_canvas_cx.fillRect(tile_selected.x, tile_selected.y, tile_selected.w, tile_selected.h);
+                    tilesheet_canvas.style.cursor = "move";
                 } else {
-                    /// There are no tiles for this image, so draw the selection box.
+                    /// The mouse is not hovering over a tile, so draw the selection rectangle.
                     draw_square();
                 }
             };
