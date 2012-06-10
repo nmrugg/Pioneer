@@ -256,6 +256,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     tilesheet_canvas_cx.strokeStyle    = "rgba(40,300,115,.8)";
                     
                     tilesheet_canvas_cx.strokeRect(rect.x + .5, rect.y + .5, rect.w, rect.h);
+                    tilesheet_canvas.style.cursor = "pointer";
                 }
                 
                 /// Reset the canvas.
@@ -279,6 +280,7 @@ document.addEventListener("DOMContentLoaded", function ()
                         /// Since the mouse is hovering over an already created tile, highlight it.
                         tilesheet_canvas_cx.fillStyle = "rgba(255,255,255, .4)";
                         tilesheet_canvas_cx.fillRect(tile_selected.x, tile_selected.y, tile_selected.w, tile_selected.h);
+                        tilesheet_canvas.style.cursor = "move";
                     } else {
                         /// The mouse is not hovering over a tile, so draw the selection box.
                         draw_square();
