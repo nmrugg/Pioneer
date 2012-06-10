@@ -1,3 +1,7 @@
+/*jslint browser: true, white: true */
+
+/*global alert */
+
 document.addEventListener("DOMContentLoaded", function ()
 {
     "use strict";
@@ -80,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function ()
                             if (cur_tab !== this_tab) {
                                 old_el = document.getElementById("tab-" + cur_tab);
                                 if (old_el) {
-                                    old_el.style.display = "none"
+                                    old_el.style.display = "none";
                                     document.getElementById("a_tab-" + cur_tab).classList.remove("active-tab");
                                 }
                                 tab.style.display = "block";
@@ -93,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function ()
                             
                             return false;
                         };
-                    };
+                    }
                     
                     a.href = "#tab-" + tabs;
                     a.id = "a_tab-" + tabs;
@@ -256,10 +260,9 @@ document.addEventListener("DOMContentLoaded", function ()
                     });
                     
                     return tile_selected;
-                } else {
-                    /// There are no tiles for this image, it cannot hover over anything.
-                    return false;
                 }
+                /// There are no tiles for this image, it cannot hover over anything.
+                return false;
             }
             
             /**
@@ -280,7 +283,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     tilesheet_canvas_cx.webkitLineDash = [3, 4];
                     tilesheet_canvas_cx.strokeStyle    = "rgba(40,300,115,.8)";
                     
-                    tilesheet_canvas_cx.strokeRect(rect.x + .5, rect.y + .5, rect.w, rect.h);
+                    tilesheet_canvas_cx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w, rect.h);
                     tilesheet_canvas.style.cursor = "pointer";
                 }
                 
@@ -346,17 +349,17 @@ document.addEventListener("DOMContentLoaded", function ()
                 tilesheet_canvas_cx.lineWidth      = 1;
                 tilesheet_canvas_cx.mozDash        = [3, 4];
                 tilesheet_canvas_cx.webkitLineDash = [3, 4];
-                tilesheet_canvas_cx.strokeStyle    = "rgba(0,0,0,.5)";
+                tilesheet_canvas_cx.strokeStyle    = "rgba(0,0,0,0.5)";
                 
-                ///NOTE: adding .5 makes the line draw more cleanly.
+                ///NOTE: adding 0.5 makes the line draw more cleanly.
                 
                 for (x = snap.x; x < width; x += snap.x) {
-                    tilesheet_canvas_cx.moveTo(x + .5, 0);
-                    tilesheet_canvas_cx.lineTo(x + .5, height);
+                    tilesheet_canvas_cx.moveTo(x + 0.5, 0);
+                    tilesheet_canvas_cx.lineTo(x + 0.5, height);
                 }
                 for (y = snap.y; y < height; y += snap.y) {
-                    tilesheet_canvas_cx.moveTo(0, y + .5);
-                    tilesheet_canvas_cx.lineTo(width, y + .5);
+                    tilesheet_canvas_cx.moveTo(0, y + 0.5);
+                    tilesheet_canvas_cx.lineTo(width, y + 0.5);
                 }
                 
                 tilesheet_canvas_cx.stroke();
@@ -450,7 +453,7 @@ document.addEventListener("DOMContentLoaded", function ()
                         editor.selected_tilesheet = which;
                         img.src = "/assets/" + which;
                     }
-                }
+                };
             }());
             
             tilesheet_select.onchange = function ()
@@ -541,31 +544,29 @@ document.addEventListener("DOMContentLoaded", function ()
         
         function drop(e)
         {
-            var count,
-                files = e.dataTransfer.files,
-                i     = 0;
+            var files = e.dataTransfer.files,
+                len;
             
             e.stopPropagation();
             e.preventDefault();
             
-            count = files.length;
+            len = files.length;
             
             /// Only call the handler if one or more files were dropped.
-            if (count < 1) {
+            if (len < 1) {
                 alert("ERROR: No files were dropped.");
                 return;
             }
             
             function upload_files()
             {
-                var file,
-                    formData = new FormData();
+                var ajax = new window.XMLHttpRequest(),
+                    formData = new FormData(),
+                    i;
                 
-                for (var i = 0, file; file = files[i]; i += 1) {
-                    formData.append(file.name, file);
+                for (i = 0; i < len; i += 1) {
+                    formData.append(files[i].name, files[i]);
                 }
-                
-                var ajax = new window.XMLHttpRequest();
                 
                 ajax.open("POST", "/upload");
                 
@@ -588,4 +589,4 @@ document.addEventListener("DOMContentLoaded", function ()
     }());
     
     document.title = game_name;
-}());
+});
