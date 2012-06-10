@@ -119,167 +119,14 @@ document.addEventListener("DOMContentLoaded", function ()
             }());
             
             tabs[tabs.length] = create_tab("Brushes",     tab_container, ul);
-            tabs[tabs.length] = create_tab("Tiles",   tab_container, ul);
-            tabs[tabs.length] = create_tab("Tilesets", tab_container, ul);
+            tabs[tabs.length] = create_tab("Animations",   tab_container, ul);
+            tabs[tabs.length] = create_tab("Tiles", tab_container, ul);
             
             editor.el.appendChild(tab_container);
             
         }());
     }());
     
-    /**
-     * Create tab 1 (Tiles)
-     */
-    (function ()
-    {
-        var display_tiles,
-            tile_canvas    = document.createElement("canvas"),
-            tile_container = document.createElement("div"),
-            tile_select    = document.createElement("select");
-        
-        /// Hide the canvas until it is read to be drawn on.
-        tile_canvas.setAttribute("width",  0);
-        tile_canvas.setAttribute("height", 0);
-        
-        ///NOTE: A delay is needed to let it get attached to the DOM.
-        window.setTimeout(function ()
-        {
-            /// Since this tab may not be visible, force it to be visible in order to get the offset measurement.
-            ///NOTE: The browser will not display the change.
-            var orig_display = tabs[1].style.display;
-            tabs[1].style.display = "block";
-            /// Set the top to the current position and bottom to the bottom of the parent div..
-            tile_container.style.top = tile_container.offsetTop + "px";
-            tile_container.style.bottom = 0;
-            tabs[1].style.display = orig_display;
-        }, 0);
-        
-        tabs[1].appendChild(tile_select);
-        tile_canvas.className = "checkered";
-        tile_container.className = "canvas_container";
-        tile_container.appendChild(tile_canvas);
-        tabs[1].appendChild(tile_container);
-        
-        editor.draw_tiles = (function ()
-        {
-            var handle_tile_drawing = (function ()
-            {
-                function display_tiles(tile_set, dry_run, cur_height)
-                {
-                    var cur_width = 0,
-                        total_height,
-                        width = tile_canvas.offsetWidth;
-                    
-                    if (!cur_height) {
-                        cur_height = 0;
-                    }
-                    
-                    tile_set.forEach(function (tile)
-                    {
-                        
-                    });
-                    
-                    return total_height;
-                }
-                
-                return function handle_tile_drawing(asset)
-                {
-                    var height = 0;
-                    
-                    if (typeof asset !== "undefined") {
-                        if (editor.tiles[asset]) {
-                            height = display_tiles(editor.tiles[asset], true);
-                            tile_canvas.setAttribute("height", height);
-                            display_tiles(editor.tiles[asset]);
-                        }
-                    /// Show them all.
-                    } else {
-                        editor.assets.forEach(function (asset)
-                        {
-                            if (editor.tiles[asset]) {
-                                height += display_tiles(editor.tiles[asset], true);
-                            }
-                        });
-                        tile_canvas.setAttribute("height", height);
-                        height = 0;
-                        editor.assets.forEach(function (asset)
-                        {
-                            if (editor.tiles[asset]) {
-                                height = display_tiles(editor.tiles[asset], false, height);
-                            }
-                        });
-                    }
-                };
-            }());
-            
-            return function ()
-                {
-                var selection = tile_select.value;
-                
-                if (!editor.assets) {
-                    return;
-                }
-                
-                /// Set the width, and for the time being, hide the canvas by removing the height.
-                tile_canvas.setAttribute("width",  editor.el.offsetWidth);
-                tile_canvas.setAttribute("height", 0);
-                
-                /// The first element is to show all of them.
-                if (tile_select.options.selectedIndex === 0) {
-                    handle_tile_drawing();
-                } else {
-                    handle_tile_drawing(selection);
-                }
-            };
-        }());
-        
-        tile_select.onchange = editor.draw_tiles;
-        
-        tile_select.onkeyup = editor.draw_tiles;
-        
-        
-        /**
-         * Get tiles at start up.
-         */
-        (function get_tiles()
-        {
-            var ajax = new window.XMLHttpRequest();
-            
-            ajax.open("GET", "/api?action=get_tiles");
-            
-            ajax.addEventListener("load", function ()
-            {
-                var cur_tiles = {};
-                
-                try {
-                    cur_tiles = JSON.parse(ajax.responseText);
-                } catch (e) {}
-                
-                editor.tiles = cur_tiles;
-                
-                window.setTimeout(editor.draw_tiles, 50);
-            });
-            
-            ajax.send();
-        }());
-        
-        editor.update_tile_select = function ()
-        {
-            /// Remove assets.
-            tile_select.options.length = 0;
-            
-            ///NOTE: new Option(text, value, default_selected, selected);
-            tile_select.options[tile_select.options.length] = new Option("All", 0, true, false);
-            
-            editor.assets.forEach(function (asset)
-            {
-                ///NOTE: new Option(text, value, default_selected, selected);
-                tile_select.options[tile_select.options.length] = new Option(asset, asset, false, false);
-            });
-        };
-        
-        
-    }());
     
     /**
      * Create tile editor (tab 2)
@@ -590,15 +437,38 @@ document.addEventListener("DOMContentLoaded", function ()
                 });
                 
                 load_tile(tilesheet_select.value);
-                
-                editor.update_tile_select();
             });
             
             ajax.send();
         };
     }());
     
-    editor.get_assets();
+    
+    /**
+     * Get tiles at start up.
+     */
+    (function get_tiles()
+    {
+        var ajax = new window.XMLHttpRequest();
+        
+        ajax.open("GET", "/api?action=get_tiles");
+        
+        ajax.addEventListener("load", function ()
+        {
+            var cur_tiles = {};
+            
+            try {
+                cur_tiles = JSON.parse(ajax.responseText);
+            } catch (e) {}
+            
+            editor.tiles = cur_tiles;
+            
+            /// Now, get the assets.
+            editor.get_assets();
+        });
+        
+        ajax.send();
+    }());
     
 
     /**
