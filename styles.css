@@ -13,7 +13,7 @@ html, body {
     background: rgba(255, 255, 255, .8);
 }
 
-.tilesheet_container {
+.canvas_container {
     width: 100%;
     position: absolute;
     overflow: scroll;

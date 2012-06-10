@@ -132,11 +132,111 @@ document.addEventListener("DOMContentLoaded", function ()
      */
     (function ()
     {
-        var tile_canvas = document.createElement("canvas"),
-            tile_select = document.createElement("select");
+        var display_tiles,
+            tile_canvas    = document.createElement("canvas"),
+            tile_container = document.createElement("div"),
+            tile_select    = document.createElement("select");
+        
+        /// Hide the canvas until it is read to be drawn on.
+        tile_canvas.setAttribute("width",  0);
+        tile_canvas.setAttribute("height", 0);
+        
+        ///NOTE: A delay is needed to let it get attached to the DOM.
+        window.setTimeout(function ()
+        {
+            /// Since this tab may not be visible, force it to be visible in order to get the offset measurement.
+            ///NOTE: The browser will not display the change.
+            var orig_display = tabs[1].style.display;
+            tabs[1].style.display = "block";
+            /// Set the top to the current position and bottom to the bottom of the parent div..
+            tile_container.style.top = tile_container.offsetTop + "px";
+            tile_container.style.bottom = 0;
+            tabs[1].style.display = orig_display;
+        }, 0);
         
         tabs[1].appendChild(tile_select);
-        tabs[1].appendChild(tile_canvas);
+        tile_canvas.className = "checkered";
+        tile_container.className = "canvas_container";
+        tile_container.appendChild(tile_canvas);
+        tabs[1].appendChild(tile_container);
+        
+        editor.draw_tiles = (function ()
+        {
+            var handle_tile_drawing = (function ()
+            {
+                function display_tiles(tile_set, dry_run, cur_height)
+                {
+                    var cur_width = 0,
+                        total_height,
+                        width = tile_canvas.offsetWidth;
+                    
+                    if (!cur_height) {
+                        cur_height = 0;
+                    }
+                    
+                    tile_set.forEach(function (tile)
+                    {
+                        
+                    });
+                    
+                    return total_height;
+                }
+                
+                return function handle_tile_drawing(asset)
+                {
+                    var height = 0;
+                    
+                    if (typeof asset !== "undefined") {
+                        if (editor.tiles[asset]) {
+                            height = display_tiles(editor.tiles[asset], true);
+                            tile_canvas.setAttribute("height", height);
+                            display_tiles(editor.tiles[asset]);
+                        }
+                    /// Show them all.
+                    } else {
+                        editor.assets.forEach(function (asset)
+                        {
+                            if (editor.tiles[asset]) {
+                                height += display_tiles(editor.tiles[asset], true);
+                            }
+                        });
+                        tile_canvas.setAttribute("height", height);
+                        height = 0;
+                        editor.assets.forEach(function (asset)
+                        {
+                            if (editor.tiles[asset]) {
+                                height = display_tiles(editor.tiles[asset], false, height);
+                            }
+                        });
+                    }
+                };
+            }());
+            
+            return function ()
+                {
+                var selection = tile_select.value;
+                
+                if (!editor.assets) {
+                    return;
+                }
+                
+                /// Set the width, and for the time being, hide the canvas by removing the height.
+                tile_canvas.setAttribute("width",  editor.el.offsetWidth);
+                tile_canvas.setAttribute("height", 0);
+                
+                /// The first element is to show all of them.
+                if (tile_select.options.selectedIndex === 0) {
+                    handle_tile_drawing();
+                } else {
+                    handle_tile_drawing(selection);
+                }
+            };
+        }());
+        
+        tile_select.onchange = editor.draw_tiles;
+        
+        tile_select.onkeyup = editor.draw_tiles;
+        
         
         /**
          * Get tiles at start up.
@@ -157,7 +257,7 @@ document.addEventListener("DOMContentLoaded", function ()
                 
                 editor.tiles = cur_tiles;
                 
-                window.setTimeout(editor.update_tiles, 50);
+                window.setTimeout(editor.draw_tiles, 50);
             });
             
             ajax.send();
@@ -199,7 +299,7 @@ document.addEventListener("DOMContentLoaded", function ()
         tilesheet_canvas.setAttribute("height", 0);
         
         tilesheet_canvas.className = "checkered";
-        tilesheet_container.className = "tilesheet_container";
+        tilesheet_container.className = "canvas_container";
         tilesheet_container.appendChild(tilesheet_canvas);
         
         
@@ -322,7 +422,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     
                     editor.draw_tilesheet();
                     
-                    window.setTimeout(editor.update_tiles, 50);
+                    window.setTimeout(editor.draw_tiles, 50);
                 });
                 
                 ajax.send();
@@ -405,7 +505,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     
                     editor.tiles = cur_tiles;
                     
-                    window.setTimeout(editor.update_tiles, 50);
+                    window.setTimeout(editor.draw_tiles, 50);
                 });
                 
                 ajax.send();
