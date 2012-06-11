@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function ()
             } else if (window.localStorage.getItem("cur_tab")) {
                 cur_tab = Number(window.localStorage.getItem("cur_tab"));
             } else {
-                cur_tab = 2;
+                cur_tab = 0;
             }
             
             tab_container.id = "tabs";
@@ -133,7 +133,7 @@ document.addEventListener("DOMContentLoaded", function ()
                 };
             }());
             
-            tabs[tabs.length] = create_tab("Brushes",    tab_container, ul);
+            tabs[tabs.length] = create_tab("World",      tab_container, ul);
             tabs[tabs.length] = create_tab("Animations", tab_container, ul);
             tabs[tabs.length] = create_tab("Tilesheets", tab_container, ul);
             
@@ -142,6 +142,13 @@ document.addEventListener("DOMContentLoaded", function ()
         }());
     }());
     
+    /**
+     * Create World editor (tab 0)
+     */
+    (function ()
+    {
+        
+    }());
     
     /**
      * Create tile editor (tab 2)
