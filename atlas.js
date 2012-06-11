@@ -628,7 +628,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     var half_w = editor.selected_tile.tile.w / 2,
                         half_h = editor.selected_tile.tile.h / 2;
                     
-                    tile_cursor_cx.drawImage(tile_img, editor.selected_tile.tile.x, editor.selected_tile.tile.y, editor.selected_tile.tile.w, editor.selected_tile.tile.h, 0, 0, editor.selected_tile.tile.w, editor.selected_tile.tile.h)
+                    tile_cursor_cx.drawImage(tile_img, editor.selected_tile.tile.x, editor.selected_tile.tile.y, editor.selected_tile.tile.w, editor.selected_tile.tile.h, 0, 0, editor.selected_tile.tile.w, editor.selected_tile.tile.h);
                     tile_cursor.display = "block";
                     
                     window.onmousemove = function (e)
