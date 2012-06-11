@@ -51,10 +51,18 @@ document.addEventListener("DOMContentLoaded", function ()
          */
         (function ()
         {
-            var cur_tab = 2,
+            var cur_tab,
                 create_tab,
                 tab_container = document.createElement("div"),
                 ul = document.createElement("ul");
+            
+            if (/\#tab-\d+/.test(window.location.hash)) {
+                cur_tab = Number(/\#tab-(\d+)/.exec(window.location.hash)[1]);
+            } else if (window.localStorage.getItem("cur_tab")) {
+                cur_tab = Number(window.localStorage.getItem("cur_tab"));
+            } else {
+                cur_tab = 2;
+            }
             
             tab_container.id = "tabs";
             tab_container.appendChild(ul);
@@ -90,6 +98,7 @@ document.addEventListener("DOMContentLoaded", function ()
                                 tab.style.display = "block";
                                 a.classList.add("active-tab");
                                 cur_tab = this_tab;
+                                window.localStorage.setItem("cur_tab", cur_tab);
                             }
                             
                             e.preventDefault();
@@ -159,9 +168,13 @@ document.addEventListener("DOMContentLoaded", function ()
         ///NOTE: A delay is needed to let it get attached to the DOM.
         window.setTimeout(function ()
         {
+            var cur_style = tabs[2].style.display;
+            /// Because elements only have offsetTop if they are displayed on the screen, we must make sure that the tab is set to block (even though the user never sees anything unusual).
+            tabs[2].style.display = "block";
             /// Set the top to the current position and bottom to the bottom of the parent div..
             tilesheet_container.style.top = tilesheet_container.offsetTop + "px";
             tilesheet_container.style.bottom = 0;
+            tabs[2].style.display = cur_style;
         }, 0);
         
         tabs[2].appendChild(tilesheet_select);
