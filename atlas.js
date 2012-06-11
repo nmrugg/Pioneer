@@ -310,10 +310,14 @@ document.addEventListener("DOMContentLoaded", function ()
                     rect,
                     tile_selected = get_hover_tile(e);
                 
+                /// Did the user click on an already designated tile?
                 if (tile_selected) {
-                    console.log(tile_selected);
+                    editor.selected_tile = {
+                        tile:      tile_selected,
+                        tilesheet: editor.selected_tilesheet 
+                    };
+                    editor.change_tool("draw");
                 } else {
-                    debugger;
                     ajax = new window.XMLHttpRequest();
                     rect = get_selection_rec(e);
                     
@@ -588,4 +592,55 @@ document.addEventListener("DOMContentLoaded", function ()
     }());
     
     document.title = game_name;
+    
+    editor.change_tool = (function ()
+    {
+        var show_tile_cursor = (function ()
+        {
+            var tile_cursor = document.createElement("canvas"),
+                tile_cursor_cx,
+                tile_img    = document.createElement("img");
+            
+            tile_cursor_cx = tile_cursor.getContext("2d");
+            tile_cursor.className = "tile_cursor";
+            
+            tile_cursor.display = "none";
+            document.body.appendChild(tile_cursor);
+            
+            return function show_tile_cursor()
+            {
+                tile_img.onload = function ()
+                {
+                    /// Normally, this should snap.
+                    var half_w = editor.selected_tile.tile.w / 2,
+                        half_h = editor.selected_tile.tile.h / 2;
+                    
+                    tile_cursor_cx.drawImage(tile_img, editor.selected_tile.tile.x, editor.selected_tile.tile.y, editor.selected_tile.tile.w, editor.selected_tile.tile.h, 0, 0, editor.selected_tile.tile.w, editor.selected_tile.tile.h)
+                    tile_cursor.display = "block";
+                    
+                    window.onmousemove = function (e)
+                    {
+                        tile_cursor.style.left = (e.clientX - half_w) + "px";
+                        tile_cursor.style.top  = (e.clientY - half_h) + "px";
+                        
+                    };
+                };
+                
+                tile_img.src = "/assets/" + editor.selected_tile.tilesheet;
+                tile_cursor.setAttribute("width",   editor.selected_tile.tile.w);
+                tile_cursor.setAttribute("height",  editor.selected_tile.tile.h);
+            };
+        }());
+        
+        return function change_tool(tool)
+        {
+            editor.tool = tool;
+            
+            if (tool === "draw") {
+                if (editor.selected_tile) {
+                    show_tile_cursor();
+                }
+            }
+        };
+    }());
 });

@@ -19,6 +19,12 @@ html, body {
     overflow: scroll;
 }
 
+.tile_cursor {
+    position: fixed;
+    pointer-events: none;
+    opacity: .5;
+}
+
 .checkered {
     background: url("/checkers.png");
     background-attachment:fixed;
