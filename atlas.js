@@ -305,27 +305,35 @@ document.addEventListener("DOMContentLoaded", function ()
             
             tilesheet_canvas.onclick = function (e)
             {
-                var ajax = new window.XMLHttpRequest(),
+            
+                var ajax,
+                    rect,
+                    tile_selected = get_hover_tile(e);
+                
+                if (tile_selected) {
+                    console.log(tile_selected);
+                } else {
+                    debugger;
+                    ajax = new window.XMLHttpRequest();
                     rect = get_selection_rec(e);
-                
-                ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tilesheet_select.value, tiles: [rect]}));
-                
-                ajax.addEventListener("load", function ()
-                {
-                    var cur_tiles = {};
                     
-                    try {
-                        cur_tiles = JSON.parse(ajax.responseText);
-                    } catch (e) {}
+                    ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tilesheet_select.value, tiles: [rect]}));
                     
-                    editor.tiles = cur_tiles;
+                    ajax.addEventListener("load", function ()
+                    {
+                        var cur_tiles = {};
+                        
+                        try {
+                            cur_tiles = JSON.parse(ajax.responseText);
+                        } catch (e) {}
+                        
+                        editor.tiles = cur_tiles;
+                        
+                        editor.draw_tilesheet();
+                    });
                     
-                    editor.draw_tilesheet();
-                    
-                    window.setTimeout(editor.draw_tiles, 50);
-                });
-                
-                ajax.send();
+                    ajax.send();
+                }
             };
             
             /**
@@ -404,8 +412,6 @@ document.addEventListener("DOMContentLoaded", function ()
                     } catch (e) {}
                     
                     editor.tiles = cur_tiles;
-                    
-                    window.setTimeout(editor.draw_tiles, 50);
                 });
                 
                 ajax.send();
