@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function ()
         game_name = "Pioneer",
         tabs = [];
     
-    function resize_canvas(e)
+    function resize_canvas()
     {
         ///NOTE: Must use setAttribute to avoid stretching.
         bg_el.setAttribute("width",  window.innerWidth);
@@ -533,13 +533,6 @@ document.addEventListener("DOMContentLoaded", function ()
         {
             e.stopPropagation();
             e.preventDefault();
-        }
-        
-        function handleReadernotification(e)
-        {
-            if (e.lengthComputable) {
-                document.title = game_name + " (" + (e.loaded / e.total) + ")";
-            }
         }
         
         function drop(e)
