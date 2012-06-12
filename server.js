@@ -1,3 +1,5 @@
+/*jslint node: true, nomen: true, white: true */
+
 "use strict";
 
 var formidable = require("formidable"),
@@ -54,7 +56,7 @@ function add_tiles(response, data)
             data.tiles.forEach(function (tile)
             {
                 this_tile[this_tile.length] = tile;
-            })
+            });
         }
         
         tiles_str = JSON.stringify(tiles);
@@ -78,7 +80,7 @@ require("http").createServer(function (request, response)
         query;
     
     /// Is there an upload?
-    if (url_parts.pathname === "/upload" && request.method.toLowerCase() == "post") {
+    if (url_parts.pathname === "/upload" && request.method.toLowerCase() === "post") {
         form = new formidable.IncomingForm();
         form.maxFieldsSize = 100 * 1024 * 1024; /// 100 MB
         form.encoding = "binary";
