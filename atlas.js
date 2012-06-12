@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function ()
         
         tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
         
-        /// Hide the canvas until it is read to be drawn on.
+        /// Hide the canvas until it is ready to be drawn on.
         tilesheet_canvas.setAttribute("width",  0);
         tilesheet_canvas.setAttribute("height", 0);
         
@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", function ()
             var cur_style = tabs[2].style.display;
             /// Because elements only have offsetTop if they are displayed on the screen, we must make sure that the tab is set to block (even though the user never sees anything unusual).
             tabs[2].style.display = "block";
-            /// Set the top to the current position and bottom to the bottom of the parent div..
+            /// Set the top to the current position and bottom to the bottom of the parent div.
             tilesheet_container.style.top = tilesheet_container.offsetTop + "px";
             tilesheet_container.style.bottom = 0;
             tabs[2].style.display = cur_style;
