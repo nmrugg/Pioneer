@@ -624,7 +624,7 @@ document.addEventListener("DOMContentLoaded", function ()
             tile_cursor_cx = tile_cursor.getContext("2d");
             tile_cursor.className = "tile_cursor";
             
-            tile_cursor.display = "none";
+            tile_cursor.style.display = "none";
             document.body.appendChild(tile_cursor);
             
             return function show_tile_cursor()
@@ -633,17 +633,40 @@ document.addEventListener("DOMContentLoaded", function ()
                 {
                     /// Normally, this should snap.
                     var half_w = editor.selected_tile.tile.w / 2,
-                        half_h = editor.selected_tile.tile.h / 2;
+                        half_h = editor.selected_tile.tile.h / 2,
+                        onmove;
                     
                     tile_cursor_cx.drawImage(tile_img, editor.selected_tile.tile.x, editor.selected_tile.tile.y, editor.selected_tile.tile.w, editor.selected_tile.tile.h, 0, 0, editor.selected_tile.tile.w, editor.selected_tile.tile.h);
-                    tile_cursor.display = "block";
                     
-                    window.onmousemove = function (e)
+                    if (typeof editor.cancel_draw_mode === "function") {
+                        editor.cancel_draw_mode({keyCode: 27});
+                    }
+                    
+                    onmove = function (e)
                     {
+                        tile_cursor.style.display = "block";
                         tile_cursor.style.left = (e.clientX - half_w) + "px";
                         tile_cursor.style.top  = (e.clientY - half_h) + "px";
-                        
                     };
+                    
+                    window.addEventListener("mousemove", onmove, false);
+                    
+                    editor.cancel_draw_mode = function(e)
+                    {
+                        if (e.keyCode === 27) { /// Escape
+                            window.removeEventListener("mousemove", onmove, false);
+                            tile_cursor.style.display = "none";
+                            
+                            /// Reset to the default tool.
+                            editor.tool = "select";
+                            
+                            window.removeEventListener("keypress", editor.cancel_draw_mode, false);
+                            delete editor.cancel_draw_mode;
+                        }
+                    };
+                    
+                    window.addEventListener("keypress", editor.cancel_draw_mode, false);
+                    editor.tool = "draW";
                 };
                 
                 tile_img.src = "/assets/" + editor.selected_tile.tilesheet;
@@ -651,6 +674,9 @@ document.addEventListener("DOMContentLoaded", function ()
                 tile_cursor.setAttribute("height",  editor.selected_tile.tile.h);
             };
         }());
+        
+        /// Set the default tool.
+        editor.tool = "select";
         
         return function change_tool(tool)
         {
