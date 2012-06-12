@@ -218,8 +218,17 @@ document.addEventListener("DOMContentLoaded", function ()
             snap_box.type = "text";
             size_box.type = "text";
             
-            snap_box.value = "32 x 32";
-            size_box.value = "32 x 32";
+            snap_box.value = window.localStorage.getItem("tilesheet_snap") || "32 x 32";
+            size_box.value = window.localStorage.getItem("tilesheet_size") || "32 x 32";
+            
+            snap_box.onchange = function ()
+            {
+                window.localStorage.setItem("tilesheet_snap", snap_box.value);
+            };
+            size_box.onchange = function ()
+            {
+                window.localStorage.setItem("tilesheet_size", size_box.value);
+            };
             
             auto_split.textContent = "Auto Split";
             
@@ -446,7 +455,8 @@ document.addEventListener("DOMContentLoaded", function ()
         {
             var ajax = new window.XMLHttpRequest(),
                 img  = document.createElement("img"),
-                load_tile;
+                load_tile,
+                tilesheet_select_onchange;
             
             editor.draw_tilesheet = function ()
             {
@@ -486,21 +496,22 @@ document.addEventListener("DOMContentLoaded", function ()
                 };
             }());
             
-            tilesheet_select.onchange = function ()
+            tilesheet_select_onchange = function ()
             {
+                window.localStorage.setItem("selected_tilesheet", tilesheet_select.value);
                 load_tile(tilesheet_select.value);
             };
             
-            tilesheet_select.onkeyup = function ()
-            {
-                load_tile(tilesheet_select.value);
-            };
+            tilesheet_select.onchange = tilesheet_select_onchange;
+            
+            tilesheet_select.onkeyup  = tilesheet_select_onchange;
             
             ajax.open("GET", "/api?action=get_assets");
             
             ajax.addEventListener("load", function ()
             {
-                var assets = [];
+                var assets = [],
+                    selected_tilesheet = window.localStorage.getItem("selected_tilesheet");
                 
                 try {
                     assets = JSON.parse(ajax.responseText);
@@ -516,7 +527,7 @@ document.addEventListener("DOMContentLoaded", function ()
                 editor.assets.forEach(function (asset)
                 {
                     ///NOTE: new Option(text, value, default_selected, selected);
-                    tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, false);
+                    tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, (asset === selected_tilesheet));
                 });
                 
                 load_tile(tilesheet_select.value);
