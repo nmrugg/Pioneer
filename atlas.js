@@ -331,6 +331,20 @@ document.addEventListener("DOMContentLoaded", function ()
                 }
             };
             
+            tilesheet_canvas.onmousedown = function (e)
+            {
+                var tile_selected = get_hover_tile(e);
+                
+                if (tile_selected) {
+                    editor.selected_tile = {
+                        tile:      tile_selected,
+                        tilesheet: editor.selected_tilesheet 
+                    };
+                    editor.change_tool("draw");
+                }
+                ///TODO: Let the user draw a selection rectangle.
+            };
+            
             tilesheet_canvas.onclick = function (e)
             {
             
