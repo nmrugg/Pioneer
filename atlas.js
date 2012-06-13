@@ -463,10 +463,13 @@ document.addEventListener("DOMContentLoaded", function ()
                 if (img.src) {
                     /// First, clear the canvas.
                     tilesheet_canvas_cx.clearRect(0, 0, tilesheet_canvas.width, tilesheet_canvas.height);
+                    /// Next, draw the image.
                     tilesheet_canvas_cx.drawImage(img, 0, 0);
                     
+                    /// Does this tilesheet have any already designated tiles in it?
                     if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
-                        tilesheet_canvas_cx.fillStyle = "rgba(0,0,0, .4)";
+                        tilesheet_canvas_cx.fillStyle = "rgba(0,0,0,.3)";
+                        /// Now, draw a dark rectangle for each tile that is already made.
                         editor.tiles[editor.selected_tilesheet].forEach(function (tile)
                         {
                             tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
