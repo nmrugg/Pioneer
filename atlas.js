@@ -464,10 +464,9 @@ document.addEventListener("DOMContentLoaded", function ()
             };
         }());
         
-        editor.get_assets = function ()
+        editor.get_assets = (function ()
         {
-            var ajax = new window.XMLHttpRequest(),
-                img  = document.createElement("img"),
+            var img  = document.createElement("img"),
                 load_tile,
                 tilesheet_select_onchange;
             
@@ -522,35 +521,39 @@ document.addEventListener("DOMContentLoaded", function ()
             
             tilesheet_select.onkeyup  = tilesheet_select_onchange;
             
-            ajax.open("GET", "/api?action=get_assets");
-            
-            ajax.addEventListener("load", function ()
+            return function get_assets(which)
             {
-                var assets = [],
-                    selected_tilesheet = window.localStorage.getItem("selected_tilesheet");
+                var ajax = new window.XMLHttpRequest();
+                ajax.open("GET", "/api?action=get_assets");
                 
-                try {
-                    assets = JSON.parse(ajax.responseText);
-                } catch (e) {}
-                
-                assets.sort();
-                
-                /// Store in the editor object so that other functions can get access to it.
-                editor.assets = assets;
-                
-                tilesheet_select.options.length = 0;
-                
-                editor.assets.forEach(function (asset)
+                ajax.addEventListener("load", function ()
                 {
-                    ///NOTE: new Option(text, value, default_selected, selected);
-                    tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, (asset === selected_tilesheet));
+                    var assets = [],
+                        selected_tilesheet = which || window.localStorage.getItem("selected_tilesheet");
+                    
+                    try {
+                        assets = JSON.parse(ajax.responseText);
+                    } catch (e) {}
+                    
+                    assets.sort();
+                    
+                    /// Store in the editor object so that other functions can get access to it.
+                    editor.assets = assets;
+                    
+                    tilesheet_select.options.length = 0;
+                    
+                    editor.assets.forEach(function (asset)
+                    {
+                        ///NOTE: new Option(text, value, default_selected, selected);
+                        tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, (asset === selected_tilesheet));
+                    });
+                    
+                    load_tile(tilesheet_select.value);
                 });
                 
-                load_tile(tilesheet_select.value);
-            });
-            
-            ajax.send();
-        };
+                ajax.send();
+            };
+        }());
     }());
     
     
@@ -623,7 +626,7 @@ document.addEventListener("DOMContentLoaded", function ()
                 ajax.addEventListener("load", function ()
                 {
                     /// Update the assets list.
-                    editor.get_assets();
+                    editor.get_assets(files[0].name);
                 });
                 
                 ajax.send(formData);
