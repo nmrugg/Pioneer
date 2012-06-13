@@ -79,6 +79,9 @@ require("http").createServer(function (request, response)
         url_parts = url.parse(request.url),
         query;
     
+    /// Convert special charcters to normal (e.g., "%20" => " ").
+    url_parts.pathname = decodeURI(url_parts.pathname);
+    
     /// Is there an upload?
     if (url_parts.pathname === "/upload" && request.method.toLowerCase() === "post") {
         form = new formidable.IncomingForm();
@@ -127,13 +130,13 @@ require("http").createServer(function (request, response)
         return;
     } else {
         /// Check to see if the client is trying to access a real file.
-        path.exists(request.url.substr(1), function (exists)
+        path.exists(url_parts.pathname.substr(1), function (exists)
         {
             var filename;
             
             if (exists) {
                 ///NOTE: .substr(1) trims off the leading slash (/).
-                filename = request.url.substr(1);
+                filename = url_parts.pathname.substr(1);
             } else {
                 /// If the file does not exist, load the index.
                 filename = "index.html";
