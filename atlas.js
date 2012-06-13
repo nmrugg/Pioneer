@@ -134,8 +134,8 @@ document.addEventListener("DOMContentLoaded", function ()
             }());
             
             tabs[tabs.length] = create_tab("World",      tab_container, ul);
-            tabs[tabs.length] = create_tab("Animations", tab_container, ul);
             tabs[tabs.length] = create_tab("Tilesheets", tab_container, ul);
+            tabs[tabs.length] = create_tab("Animations", tab_container, ul);
             
             editor.el.appendChild(tab_container);
             
@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function ()
     }());
     
     /**
-     * Create tile editor (tab 2)
+     * Create tile editor (tab 1)
      */
     (function ()
     {
@@ -175,19 +175,18 @@ document.addEventListener("DOMContentLoaded", function ()
         ///NOTE: A delay is needed to let it get attached to the DOM.
         window.setTimeout(function ()
         {
-            var cur_style = tabs[2].style.display;
+            var cur_style = tabs[1].style.display;
             /// Because elements only have offsetTop if they are displayed on the screen, we must make sure that the tab is set to block (even though the user never sees anything unusual).
-            tabs[2].style.display = "block";
+            tabs[1].style.display = "block";
             /// Set the top to the current position and bottom to the bottom of the parent div.
             tilesheet_container.style.top = tilesheet_container.offsetTop + "px";
             tilesheet_container.style.bottom = 0;
-            tabs[2].style.display = cur_style;
+            tabs[1].style.display = cur_style;
         }, 0);
         
-        tabs[2].appendChild(tilesheet_select);
-        tabs[2].appendChild(tilesheet_options);
-        tabs[2].appendChild(tilesheet_container);
-        
+        tabs[1].appendChild(tilesheet_select);
+        tabs[1].appendChild(tilesheet_options);
+        tabs[1].appendChild(tilesheet_container);
         
         /// Make tilesheet options
         (function ()
