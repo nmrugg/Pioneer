@@ -143,11 +143,71 @@ document.addEventListener("DOMContentLoaded", function ()
     }());
     
     /**
+     * Parse a width x height dimension string.
+     *
+     * @example editor.parse_dimension("32 x 64"); /// Returns {x 32: y: 64}
+     * @example editor.parse_dimension("32");      /// Returns {x 32: y: 32}
+     * @param   str (string) The string to parse.
+     * @note    If there is only one parameter (and no "x"), the parameter will be used for both the width and height.
+     */
+    editor.parse_dimension = function (str)
+    {
+        var split,
+            val;
+        
+        if (!str || !str.split) {
+            val = {x: 1, y: 1};
+        } else {
+            split = str.split(/\s*x\s*/);
+            if (split.length < 2) {
+                val = {x: Number(split[0]), y: Number(split[0])};
+            } else {
+                val = {x: Number(split[0]), y: Number(split[1])};
+            }
+        }
+        
+        return val;
+    };
+    
+    /**
      * Create World editor (tab 0)
      */
     (function ()
     {
+        var name_box  = document.createElement("input"), /// The name of the game
+            snap_box  = document.createElement("input"),
+            show_grid = document.createElement("input");
         
+        snap_box.type  = "text";
+        snap_box.value = window.localStorage.getItem("world_snap") || "32 x 32";
+        editor.world_snap = snap_box.value;
+        editor.world_snap_value = editor.parse_dimension(editor.world_snap);
+        
+        snap_box.onchange = function ()
+        {
+            /// The value is stored in the editor object to make retrieving it much faster.
+            editor.world_snap = snap_box.value;
+            editor.world_snap_value = editor.parse_dimension(editor.world_snap);
+            window.localStorage.setItem("world_snap", editor.world_snap);
+        };
+        
+        show_grid.type = "checkbox";
+        /// Since localStorage only stores data as strings and Boolean() does not convert strings, check the value against the string "true".
+        if (window.localStorage.getItem("world_show_grid") === "true") {
+            show_grid.checked = true;
+        }
+        
+        show_grid.onchange = function ()
+        {
+            editor.world_show_grid = show_grid.checked;
+            window.localStorage.setItem("world_show_grid", editor.world_show_grid);
+        }
+        
+        tabs[0].appendChild(document.createTextNode("Snap: "));
+        tabs[0].appendChild(snap_box);
+        tabs[0].appendChild(document.createElement("br"));
+        tabs[0].appendChild(document.createTextNode("Show grid: "));
+        tabs[0].appendChild(show_grid);
     }());
     
     /**
@@ -195,25 +255,6 @@ document.addEventListener("DOMContentLoaded", function ()
                 size_box   = document.createElement("input"),
                 snap_box   = document.createElement("input");
             
-            function split_dim(str)
-            {
-                var split,
-                    val;
-                
-                if (!str || !str.split) {
-                    val = {x: 1, y: 1};
-                } else {
-                    split = str.split(/\s*x\s*/);
-                    if (split.length < 2) {
-                        val = {x: Number(split[0]), y: Number(split[0])};
-                    } else {
-                        val = {x: Number(split[0]), y: Number(split[1])};
-                    }
-                }
-                
-                return val;
-            }
-            
             snap_box.type = "text";
             size_box.type = "text";
             
@@ -238,16 +279,19 @@ document.addEventListener("DOMContentLoaded", function ()
             tilesheet_options.appendChild(document.createTextNode("Size: "));
             tilesheet_options.appendChild(size_box);
             
-            function get_selection_rec(e, dont_snap)
+            /**
+             * Calculate the position and size of the tilesheet selection rectangle.
+             */
+            function get_selection_rec(mouse_pos, dont_snap)
             {
                 var canvas_pos = tilesheet_canvas.getClientRects()[0],
-                    size = split_dim(size_box.value),
-                    snap = split_dim(snap_box.value),
+                    size = editor.parse_dimension(size_box.value),
+                    snap = editor.parse_dimension(snap_box.value),
                     x,
                     y;
                 
-                x = e.clientX - canvas_pos.left;
-                y = e.clientY - canvas_pos.top;
+                x = mouse_pos.x - canvas_pos.left;
+                y = mouse_pos.y - canvas_pos.top;
                 
                 if (!dont_snap) {
                     if (snap.x > 0) {
@@ -275,8 +319,7 @@ document.addEventListener("DOMContentLoaded", function ()
                 
                 if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
                     /// Check to see if the mouse is hovering over an already created tile.
-                    
-                    rect = get_selection_rec(mouse_event, true);
+                    rect = get_selection_rec({x: mouse_event.clientX, y: mouse_event.clientY}, true);
                     editor.tiles[editor.selected_tilesheet].every(function (tile)
                     {
                         if (rect.x >= tile.x && rect.x <= tile.x + tile.w && rect.y >= tile.y && rect.y <= tile.y + tile.h) {
@@ -303,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function ()
                 function draw_square()
                 {
                     /// Get the snapped rectangle.
-                    var rect = get_selection_rec(e);
+                    var rect = get_selection_rec({x: e.clientX, y: e.clientY});
                     
                     tilesheet_canvas_cx.beginPath();
                     tilesheet_canvas_cx.lineWidth      = 1;
@@ -347,7 +390,6 @@ document.addEventListener("DOMContentLoaded", function ()
             
             tilesheet_canvas.onclick = function (e)
             {
-            
                 var ajax,
                     rect,
                     tile_selected = get_hover_tile(e);
@@ -361,7 +403,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     editor.change_tool("draw");
                 } else {
                     ajax = new window.XMLHttpRequest();
-                    rect = get_selection_rec(e);
+                    rect = get_selection_rec({x: e.clientX, y: e.clientY});
                     
                     ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tilesheet_select.value, tiles: [rect]}));
                     
@@ -388,7 +430,7 @@ document.addEventListener("DOMContentLoaded", function ()
             auto_split.onmouseover = function ()
             {
                 var height = Number(tilesheet_canvas.height),
-                    snap   = split_dim(snap_box.value),
+                    snap   = editor.parse_dimension(snap_box.value),
                     width  = Number(tilesheet_canvas.width),
                     x,
                     y;
@@ -435,7 +477,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     tiles = [],
                     
                     height = Number(tilesheet_canvas.height),
-                    snap   = split_dim(snap_box.value),
+                    snap   = editor.parse_dimension(snap_box.value),
                     width  = Number(tilesheet_canvas.width),
                     x,
                     y;
@@ -661,26 +703,56 @@ document.addEventListener("DOMContentLoaded", function ()
             {
                 tile_img.onload = function ()
                 {
-                    /// Normally, this should snap.
+                    /// Center the tile on the cursor.
                     var half_w = editor.selected_tile.tile.w / 2,
                         half_h = editor.selected_tile.tile.h / 2,
                         onmove;
                     
+                    /// Create the floating tile.
                     tile_cursor_cx.drawImage(tile_img, editor.selected_tile.tile.x, editor.selected_tile.tile.y, editor.selected_tile.tile.w, editor.selected_tile.tile.h, 0, 0, editor.selected_tile.tile.w, editor.selected_tile.tile.h);
                     
                     if (typeof editor.cancel_draw_mode === "function") {
                         editor.cancel_draw_mode({keyCode: 27});
                     }
                     
+                    function get_tile_pos(mouse_pos, dont_snap)
+                    {
+                        var snap = editor.world_snap_value,
+                            x,
+                            y;
+                        
+                        x = mouse_pos.x - half_w;
+                        y = mouse_pos.y - half_h;
+                        
+                        if (!dont_snap) {
+                            if (snap.x > 0) {
+                                x = x - (x % snap.x);
+                            }
+                            if (snap.y > 0) {
+                                y = y - (y % snap.y);
+                            }
+                        }
+                        
+                        return {x: x, y: y};
+                    }
+                    
+                    /**
+                     * Move the floating image with the cursor.
+                     */
                     onmove = function (e)
                     {
+                        /// Turn off snap with the ctrl key.
+                        var pos = get_tile_pos({x: e.clientX, y: e.clientY}, e.ctrlKey);
                         tile_cursor.style.display = "block";
-                        tile_cursor.style.left = (e.clientX - half_w) + "px";
-                        tile_cursor.style.top  = (e.clientY - half_h) + "px";
+                        tile_cursor.style.left = pos.x + "px";
+                        tile_cursor.style.top  = pos.y + "px";
                     };
                     
                     window.addEventListener("mousemove", onmove, false);
                     
+                    /**
+                     * Allow the user to get out of draw mode by pressing escape.
+                     */
                     editor.cancel_draw_mode = function(e)
                     {
                         if (e.keyCode === 27) { /// Escape
