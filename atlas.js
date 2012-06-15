@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", function ()
     var bg_el = document.createElement("canvas"),
         bg_context,
         editor = {},
-        game_name = "Pioneer",
         tabs = [];
     
     function resize_canvas()
@@ -18,6 +17,8 @@ document.addEventListener("DOMContentLoaded", function ()
         bg_el.setAttribute("width",  window.innerWidth);
         bg_el.setAttribute("height", window.innerHeight);
     }
+    
+    editor.game_name = "Pioneer";
     
     editor.el = document.createElement("div");
     
@@ -173,7 +174,13 @@ document.addEventListener("DOMContentLoaded", function ()
     editor.bind_input_box = function (el, storage_name, default_val, callback)
     {
         var onchange,
+            value;
+        
+        if (storage_name) {
             value = window.localStorage.getItem(storage_name) || default_val;
+        } else {
+            value = default_val;
+        }
         
         el.value = value;
         if (typeof callback === "function") {
@@ -183,14 +190,16 @@ document.addEventListener("DOMContentLoaded", function ()
         onchange = function ()
         {
             value = el.value;
-            window.localStorage.setItem(storage_name, value);
+            if (storage_name) {
+                window.localStorage.setItem(storage_name, value);
+            }
             if (typeof callback === "function") {
                 callback(value);
             }
         };
         
-        el.onchange   = onchange; 
-        el.onkeypress = onchange;
+        el.onchange = onchange; 
+        el.onkeyup  = onchange;
     };
     
     /**
@@ -199,6 +208,7 @@ document.addEventListener("DOMContentLoaded", function ()
     (function ()
     {
         var map_box   = document.createElement("input"),
+            map_size_box = document.createElement("input"),
             name_box  = document.createElement("input"), /// The name of the game
             snap_box  = document.createElement("input"),
             show_grid = document.createElement("input");
@@ -222,10 +232,21 @@ document.addEventListener("DOMContentLoaded", function ()
             window.localStorage.setItem("world_show_grid", editor.world_show_grid);
         }
         
+        /// Create a sample world_map object.
+        editor.world_map = [{}];
+        editor.cur_map = editor.world_map[0];
+        
         map_box.type = "text";
         editor.bind_input_box(map_box, "world_map_num", 0, function (value)
         {
             editor.world_map_num = value;
+            editor.cur_map = editor.world_map[value];
+        });
+        
+        map_size_box.type = "text";
+        editor.bind_input_box(map_size_box, "", "8000 x 8000", function (value)
+        {
+            editor.cur_map.size = editor.parse_dimension(value);
         });
         
         tabs[0].appendChild(document.createTextNode("Snap: "));
@@ -236,6 +257,9 @@ document.addEventListener("DOMContentLoaded", function ()
         tabs[0].appendChild(document.createElement("br"));
         tabs[0].appendChild(document.createTextNode("Map #: "));
         tabs[0].appendChild(map_box);
+        tabs[0].appendChild(document.createElement("br"));
+        tabs[0].appendChild(document.createTextNode("Map size: "));
+        tabs[0].appendChild(map_size_box);
     }());
     
     /**
@@ -706,7 +730,7 @@ document.addEventListener("DOMContentLoaded", function ()
         editor.el.addEventListener("drop",      drop,         false);
     }());
     
-    document.title = game_name;
+    document.title = editor.game_name;
     
     editor.change_tool = (function ()
     {
@@ -756,6 +780,19 @@ document.addEventListener("DOMContentLoaded", function ()
                             }
                         }
                         
+                        if (x < 0) {
+                            x = 0;
+                        }
+                        if (y < 0) {
+                            y = 0;
+                        }
+                        if (x > editor.cur_map.size.x) {
+                            x = editor.cur_map.size.x;
+                        }
+                        if (y > editor.cur_map.size.y) {
+                            y = editor.cur_map.size.y;
+                        }
+                        
                         return {x: x, y: y};
                     }
                     
@@ -769,6 +806,9 @@ document.addEventListener("DOMContentLoaded", function ()
                         tile_cursor.style.display = "block";
                         tile_cursor.style.left = pos.x + "px";
                         tile_cursor.style.top  = pos.y + "px";
+                        
+                        ///NOTE: \u00d7 is the &times; symbols (i.e., mathmatical times).
+                        document.title = pos.x + " \u00d7 " + pos.y + " - " + editor.game_name;
                     };
                     
                     window.addEventListener("mousemove", onmove, false);
