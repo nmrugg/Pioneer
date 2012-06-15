@@ -6,17 +6,8 @@ document.addEventListener("DOMContentLoaded", function ()
 {
     "use strict";
     
-    var bg_el = document.createElement("canvas"),
-        bg_context,
-        editor = {},
-        tabs = [];
-    
-    function resize_canvas()
-    {
-        ///NOTE: Must use setAttribute to avoid stretching.
-        bg_el.setAttribute("width",  window.innerWidth);
-        bg_el.setAttribute("height", window.innerHeight);
-    }
+    var editor = {},
+        tabs   = [];
     
     editor.game_name = "Pioneer";
     
@@ -24,13 +15,7 @@ document.addEventListener("DOMContentLoaded", function ()
     
     editor.el.className = "editor";
     
-    document.body.appendChild(bg_el);
     document.body.appendChild(editor.el);
-    
-    bg_context = bg_el.getContext("2d");
-    
-    window.onresize = resize_canvas;
-    resize_canvas();
     
     (function ()
     {
@@ -110,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     }
                     
                     a.href = "#tab-" + tabs;
-                    a.id = "a_tab-" + tabs;
+                    a.id   = "a_tab-" + tabs;
                     a.textContent = name;
                     
                     a.onclick = create_onclick(tabs);
@@ -203,6 +188,38 @@ document.addEventListener("DOMContentLoaded", function ()
     };
     
     /**
+     * Create the map canvases
+     */
+    (function ()
+    {
+        /// Create a sample world_map object.
+        ///NOTE: This should be loaded from the server (if any map exists).
+        /// For now, assume no maps exists.
+        editor.world_map = [{}];
+        editor.cur_map = editor.world_map[0];
+        
+        editor.cur_map.canvases = [
+            {
+                el: document.createElement("canvas"),
+                type: "bg"
+            },
+            {
+                el: document.createElement("canvas"),
+                type: "mg"
+            },
+            {
+                el: document.createElement("canvas"),
+                type: "fg"
+            }
+        ];
+    }());
+    
+    editor.draw_map = function (which)
+    {
+        
+    };
+    
+    /**
      * Create World editor (tab 0)
      */
     (function ()
@@ -232,10 +249,6 @@ document.addEventListener("DOMContentLoaded", function ()
             window.localStorage.setItem("world_show_grid", editor.world_show_grid);
         }
         
-        /// Create a sample world_map object.
-        editor.world_map = [{}];
-        editor.cur_map = editor.world_map[0];
-        
         map_box.type = "text";
         editor.bind_input_box(map_box, "world_map_num", 0, function (value)
         {
@@ -247,6 +260,12 @@ document.addEventListener("DOMContentLoaded", function ()
         editor.bind_input_box(map_size_box, "", "8000 x 8000", function (value)
         {
             editor.cur_map.size = editor.parse_dimension(value);
+            editor.cur_map.canvases.forEach(function (canvas)
+            {
+                canvas.el.setAttribute("width",  editor.cur_map.size.x);
+                canvas.el.setAttribute("height", editor.cur_map.size.y);
+            });
+            editor.draw_map(editor.world_map_num);
         });
         
         tabs[0].appendChild(document.createTextNode("Snap: "));
