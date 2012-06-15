@@ -187,32 +187,46 @@ document.addEventListener("DOMContentLoaded", function ()
         el.onkeyup  = onchange;
     };
     
+    
     /**
      * Create the map canvases
      */
-    (function ()
+    
+    editor.camera = {x: 0, y: 0};
+    
+    /// Create a sample world_map object.
+    ///NOTE: This should be loaded from the server (if any map exists).
+    /// For now, assume no maps exists.
+    editor.world_map = [{}];
+    editor.cur_map = editor.world_map[0];
+    
+    editor.cur_map.container = document.createElement("div");
+    editor.cur_map.container.className = "container";
+    
+    editor.cur_map.container.style.top  = editor.camera.x + "px";
+    editor.cur_map.container.style.left = editor.camera.y + "px";
+    
+    editor.cur_map.canvases = [
+        {
+            el: document.createElement("canvas"),
+            type: "bg"
+        },
+        {
+            el: document.createElement("canvas"),
+            type: "mg"
+        },
+        {
+            el: document.createElement("canvas"),
+            type: "fg"
+        }
+    ];
+    
+    editor.cur_map.canvases.forEach(function (canvas)
     {
-        /// Create a sample world_map object.
-        ///NOTE: This should be loaded from the server (if any map exists).
-        /// For now, assume no maps exists.
-        editor.world_map = [{}];
-        editor.cur_map = editor.world_map[0];
-        
-        editor.cur_map.canvases = [
-            {
-                el: document.createElement("canvas"),
-                type: "bg"
-            },
-            {
-                el: document.createElement("canvas"),
-                type: "mg"
-            },
-            {
-                el: document.createElement("canvas"),
-                type: "fg"
-            }
-        ];
-    }());
+        editor.cur_map.container.appendChild(canvas.el);
+    });
+    
+    document.body.appendChild(editor.cur_map.container);
     
     editor.draw_map = function (which)
     {
@@ -772,7 +786,8 @@ document.addEventListener("DOMContentLoaded", function ()
                     /// Center the tile on the cursor.
                     var half_w = editor.selected_tile.tile.w / 2,
                         half_h = editor.selected_tile.tile.h / 2,
-                        onmove;
+                        onmove,
+                        onup;
                     
                     /// Create the floating tile.
                     tile_cursor_cx.drawImage(tile_img, editor.selected_tile.tile.x, editor.selected_tile.tile.y, editor.selected_tile.tile.w, editor.selected_tile.tile.h, 0, 0, editor.selected_tile.tile.w, editor.selected_tile.tile.h);
@@ -831,6 +846,15 @@ document.addEventListener("DOMContentLoaded", function ()
                     };
                     
                     window.addEventListener("mousemove", onmove, false);
+                    
+                    onup = function(e)
+                    {
+                        ///TODO: Determine the current level.
+                        ///TODO: Check to see if other tiles exist.
+                        ///TODO: Divide it by 1000 (pos - (pos % 1000)) / 1000
+                    };
+                    
+                    window.addEventListener("mouseup", onup, false);
                     
                     /**
                      * Allow the user to get out of draw mode by pressing escape.
