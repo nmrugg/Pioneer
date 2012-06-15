@@ -169,27 +169,46 @@ document.addEventListener("DOMContentLoaded", function ()
         return val;
     };
     
+    
+    editor.bind_input_box = function (el, storage_name, default_val, callback)
+    {
+        var onchange,
+            value = window.localStorage.getItem(storage_name) || default_val;
+        
+        el.value = value;
+        if (typeof callback === "function") {
+            callback(value);
+        }
+        
+        onchange = function ()
+        {
+            value = el.value;
+            window.localStorage.setItem(storage_name, value);
+            if (typeof callback === "function") {
+                callback(value);
+            }
+        };
+        
+        el.onchange   = onchange; 
+        el.onkeypress = onchange;
+    };
+    
     /**
      * Create World editor (tab 0)
      */
     (function ()
     {
-        var name_box  = document.createElement("input"), /// The name of the game
+        var map_box   = document.createElement("input"),
+            name_box  = document.createElement("input"), /// The name of the game
             snap_box  = document.createElement("input"),
             show_grid = document.createElement("input");
         
         snap_box.type  = "text";
-        snap_box.value = window.localStorage.getItem("world_snap") || "32 x 32";
-        editor.world_snap = snap_box.value;
-        editor.world_snap_value = editor.parse_dimension(editor.world_snap);
-        
-        snap_box.onchange = function ()
+        editor.bind_input_box(snap_box, "world_snap", "32 x 32", function (value)
         {
-            /// The value is stored in the editor object to make retrieving it much faster.
-            editor.world_snap = snap_box.value;
+            editor.world_snap = value;
             editor.world_snap_value = editor.parse_dimension(editor.world_snap);
-            window.localStorage.setItem("world_snap", editor.world_snap);
-        };
+        });
         
         show_grid.type = "checkbox";
         /// Since localStorage only stores data as strings and Boolean() does not convert strings, check the value against the string "true".
@@ -203,11 +222,20 @@ document.addEventListener("DOMContentLoaded", function ()
             window.localStorage.setItem("world_show_grid", editor.world_show_grid);
         }
         
+        map_box.type = "text";
+        editor.bind_input_box(map_box, "world_map_num", 0, function (value)
+        {
+            editor.world_map_num = value;
+        });
+        
         tabs[0].appendChild(document.createTextNode("Snap: "));
         tabs[0].appendChild(snap_box);
         tabs[0].appendChild(document.createElement("br"));
         tabs[0].appendChild(document.createTextNode("Show grid: "));
         tabs[0].appendChild(show_grid);
+        tabs[0].appendChild(document.createElement("br"));
+        tabs[0].appendChild(document.createTextNode("Map #: "));
+        tabs[0].appendChild(map_box);
     }());
     
     /**
@@ -236,12 +264,16 @@ document.addEventListener("DOMContentLoaded", function ()
         window.setTimeout(function ()
         {
             var cur_style = tabs[1].style.display;
+            /// Force the current tab to be hidden so that this tab's position will not be affected by it.
+            tabs[window.localStorage.getItem("cur_tab")].style.display = "none";
             /// Because elements only have offsetTop if they are displayed on the screen, we must make sure that the tab is set to block (even though the user never sees anything unusual).
             tabs[1].style.display = "block";
             /// Set the top to the current position and bottom to the bottom of the parent div.
             tilesheet_container.style.top = tilesheet_container.offsetTop + "px";
             tilesheet_container.style.bottom = 0;
             tabs[1].style.display = cur_style;
+            /// Make sure that the current tab is visible.
+            tabs[window.localStorage.getItem("cur_tab")].style.display = "block";
         }, 0);
         
         tabs[1].appendChild(tilesheet_select);
@@ -258,17 +290,8 @@ document.addEventListener("DOMContentLoaded", function ()
             snap_box.type = "text";
             size_box.type = "text";
             
-            snap_box.value = window.localStorage.getItem("tilesheet_snap") || "32 x 32";
-            size_box.value = window.localStorage.getItem("tilesheet_size") || "32 x 32";
-            
-            snap_box.onchange = function ()
-            {
-                window.localStorage.setItem("tilesheet_snap", snap_box.value);
-            };
-            size_box.onchange = function ()
-            {
-                window.localStorage.setItem("tilesheet_size", size_box.value);
-            };
+            editor.bind_input_box(snap_box, "tilesheet_snap", "32 x 32");
+            editor.bind_input_box(size_box, "tilesheet_size", "32 x 32");
             
             auto_split.textContent = "Auto Split";
             
@@ -721,8 +744,8 @@ document.addEventListener("DOMContentLoaded", function ()
                             x,
                             y;
                         
-                        x = mouse_pos.x - half_w;
-                        y = mouse_pos.y - half_h;
+                        x = mouse_pos.x;
+                        y = mouse_pos.y;
                         
                         if (!dont_snap) {
                             if (snap.x > 0) {
@@ -742,7 +765,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     onmove = function (e)
                     {
                         /// Turn off snap with the ctrl key.
-                        var pos = get_tile_pos({x: e.clientX, y: e.clientY}, e.ctrlKey);
+                        var pos = get_tile_pos({x: e.clientX - (editor.selected_tile.tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (editor.selected_tile.tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
                         tile_cursor.style.display = "block";
                         tile_cursor.style.left = pos.x + "px";
                         tile_cursor.style.top  = pos.y + "px";
