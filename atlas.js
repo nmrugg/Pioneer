@@ -213,16 +213,14 @@ document.addEventListener("DOMContentLoaded", function ()
         },
         {
             el: document.createElement("canvas"),
-            type: "mg"
-        },
-        {
-            el: document.createElement("canvas"),
             type: "fg"
         }
     ];
     
     editor.cur_map.canvases.forEach(function (canvas)
     {
+        canvas.el.className = "map";
+        
         editor.cur_map.container.appendChild(canvas.el);
     });
     
@@ -230,7 +228,25 @@ document.addEventListener("DOMContentLoaded", function ()
     
     editor.draw_map = function (which)
     {
+        /// Structure:
+        /// map.data[sector_x][sector_y][tiles]
+        /// The final "tiles" object:
+        ///     x         (number) The X pos on the map
+        ///     y         (number) The Y pos on the map
+        ///     tilesheet (number) Which tilesheet to use
+        ///     tile_id   (number) Which tile to use
         
+        /*
+        editor.cur_map.data.forEach(function (sector_x)
+        {
+            sector_x.forEach(sector_y) {
+                sector_y.forEach(function (level)
+                {
+                
+                });
+            });
+        });
+        */
     };
     
     /**
@@ -276,8 +292,43 @@ document.addEventListener("DOMContentLoaded", function ()
             editor.cur_map.size = editor.parse_dimension(value);
             editor.cur_map.canvases.forEach(function (canvas)
             {
+                var i,
+                    x,
+                    x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % 1000)) / 1000,
+                    y,
+                    y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 1000)) / 1000;
+                
                 canvas.el.setAttribute("width",  editor.cur_map.size.x);
                 canvas.el.setAttribute("height", editor.cur_map.size.y);
+                
+                if (!editor.cur_map.data) {
+                    editor.cur_map.data = [];
+                }
+                
+                ///TODO: Check and warn about deleting data.
+                for (x = 0; x <= x_sectors; x += 1) {
+                    if (!editor.cur_map.data[x]) {
+                        editor.cur_map.data[x] = [];
+                    }
+                    for (y = 0; y <= y_sectors; y += 1) {
+                        if (!editor.cur_map.data[x][y]) {
+                            editor.cur_map.data[x][y] = [];
+                        } else {
+                            for (i = editor.cur_map.data[x][y].length - 1; i >= 0; i -= 1) {
+                                if (editor.cur_map.data[x][y][i].x > editor.cur_map.size.x || tile.y > editor.cur_map.data[x][y][i].y) {
+                                    ///NOTE: It should warn first.
+                                    delete editor.cur_map.data[x][y][i];
+                                }
+                            }
+                        }
+                        if (editor.cur_map.data[x][y].length > y_sectors) {
+                            editor.cur_map.data[x][y] = editor.cur_map.data[x][y].slice(0, y_sectors);
+                        }
+                    }
+                    if (editor.cur_map.data[x].length > x_sectors) {
+                        editor.cur_map.data[x] = editor.cur_map.data[x].slice(0, x_sectors);
+                    }
+                }
             });
             editor.draw_map(editor.world_map_num);
         });
@@ -397,13 +448,16 @@ document.addEventListener("DOMContentLoaded", function ()
                 var tile_selected = false,
                     rect;
                 
-                if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
+                if (editor.tiles && editor.tiles[editor.selected_tilesheet.name]) {
                     /// Check to see if the mouse is hovering over an already created tile.
                     rect = get_selection_rec({x: mouse_event.clientX, y: mouse_event.clientY}, true);
-                    editor.tiles[editor.selected_tilesheet].every(function (tile)
+                    editor.tiles[editor.selected_tilesheet.name].every(function (tile, num)
                     {
                         if (rect.x >= tile.x && rect.x <= tile.x + tile.w && rect.y >= tile.y && rect.y <= tile.y + tile.h) {
-                            tile_selected = tile;
+                            tile_selected = {
+                                tile: tile,
+                                num: num
+                            };
                             return false; /// I.e., break.
                         }
                         
@@ -446,7 +500,7 @@ document.addEventListener("DOMContentLoaded", function ()
                 if (tile_selected) {
                     /// Since the mouse is hovering over an already created tile, highlight it.
                     tilesheet_canvas_cx.fillStyle = "rgba(255,255,255, .4)";
-                    tilesheet_canvas_cx.fillRect(tile_selected.x, tile_selected.y, tile_selected.w, tile_selected.h);
+                    tilesheet_canvas_cx.fillRect(tile_selected.tile.x, tile_selected.tile.y, tile_selected.tile.w, tile_selected.tile.h);
                     tilesheet_canvas.style.cursor = "move";
                 } else {
                     /// The mouse is not hovering over a tile, so draw the selection rectangle.
@@ -460,8 +514,10 @@ document.addEventListener("DOMContentLoaded", function ()
                 
                 if (tile_selected) {
                     editor.selected_tile = {
-                        tile:      tile_selected,
-                        tilesheet: editor.selected_tilesheet 
+                        tile:     tile_selected.tile,
+                        tile_num: tile_selected.num,
+                        tilesheet:     editor.selected_tilesheet.name,
+                        tilesheet_num: editor.selected_tilesheet.num
                     };
                     editor.change_tool("draw");
                 }
@@ -477,8 +533,10 @@ document.addEventListener("DOMContentLoaded", function ()
                 /// Did the user click on an already designated tile?
                 if (tile_selected) {
                     editor.selected_tile = {
-                        tile:      tile_selected,
-                        tilesheet: editor.selected_tilesheet 
+                        tile:     tile_selected.tile,
+                        tile_num: tile_selected.num,
+                        tilesheet:     editor.selected_tilesheet.name,
+                        tilesheet_num: editor.selected_tilesheet.num
                     };
                     editor.change_tool("draw");
                 } else {
@@ -589,7 +647,7 @@ document.addEventListener("DOMContentLoaded", function ()
         editor.get_assets = (function ()
         {
             var img  = document.createElement("img"),
-                load_tile,
+                load_tilesheet,
                 tilesheet_select_onchange;
             
             editor.draw_tilesheet = function ()
@@ -602,10 +660,10 @@ document.addEventListener("DOMContentLoaded", function ()
                     tilesheet_canvas_cx.drawImage(img, 0, 0);
                     
                     /// Does this tilesheet have any already designated tiles in it?
-                    if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
+                    if (editor.tiles && editor.tiles[editor.selected_tilesheet.name]) {
                         tilesheet_canvas_cx.fillStyle = "rgba(0,0,0,.3)";
                         /// Now, draw a dark rectangle for each tile that is already made.
-                        editor.tiles[editor.selected_tilesheet].forEach(function (tile)
+                        editor.tiles[editor.selected_tilesheet.name].forEach(function (tile)
                         {
                             tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
                         });
@@ -613,12 +671,14 @@ document.addEventListener("DOMContentLoaded", function ()
                 }
             };
             
-            load_tile = (function ()
+            load_tilesheet = (function ()
             {
                 var last_item;
                 
                 return function (which)
                 {
+                    var num;
+                    
                     if (which !== last_item) {
                         last_item = which;
                         img.onload = function ()
@@ -627,7 +687,21 @@ document.addEventListener("DOMContentLoaded", function ()
                             tilesheet_canvas.setAttribute("height", img.height);
                             editor.draw_tilesheet();
                         };
-                        editor.selected_tilesheet = which;
+                        
+                        editor.assets.every(function (asset, i)
+                        {
+                            if (which === asset) {
+                                num = i;
+                                return false; /// I.e., break.
+                            }
+                            return true;
+                        });
+                        
+                        editor.selected_tilesheet = {
+                            name: which,
+                            num:  num
+                        };
+                        
                         img.src = "/assets/" + which;
                     }
                 };
@@ -636,7 +710,7 @@ document.addEventListener("DOMContentLoaded", function ()
             tilesheet_select_onchange = function ()
             {
                 window.localStorage.setItem("selected_tilesheet", tilesheet_select.value);
-                load_tile(tilesheet_select.value);
+                load_tilesheet(tilesheet_select.value);
             };
             
             tilesheet_select.onchange = tilesheet_select_onchange;
@@ -670,7 +744,7 @@ document.addEventListener("DOMContentLoaded", function ()
                         tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, (asset === selected_tilesheet));
                     });
                     
-                    load_tile(tilesheet_select.value);
+                    load_tilesheet(tilesheet_select.value);
                 });
                 
                 ajax.send();
@@ -849,9 +923,25 @@ document.addEventListener("DOMContentLoaded", function ()
                     
                     onup = function(e)
                     {
-                        ///TODO: Determine the current level.
-                        ///TODO: Check to see if other tiles exist.
-                        ///TODO: Divide it by 1000 (pos - (pos % 1000)) / 1000
+                        var target = e.srcElement || e.originalTarget,
+                            sector,
+                            pos = get_tile_pos({x: e.clientX - (editor.selected_tile.tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (editor.selected_tile.tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
+                        
+                        if (target.className === "map") {
+                            e.stopPropagation();
+                            ///TODO: Determine the current level.
+                            var level = 0;
+                            ///TODO: Check to see if other tiles exist.
+                            sector = editor.cur_map.data[(pos.x - (pos.x % 1000)) / 1000][(pos.y - (pos.y % 1000)) / 1000];
+                            
+                            sector[sector.length] = {
+                                l: level,
+                                t: editor.selected_tile.tile_num,
+                                s: editor.selected_tile.tilesheet_num,
+                                x: pos.x,
+                                y: pos.y
+                            };
+                        }
                     };
                     
                     window.addEventListener("mouseup", onup, false);
@@ -863,6 +953,7 @@ document.addEventListener("DOMContentLoaded", function ()
                     {
                         if (e.keyCode === 27) { /// Escape
                             window.removeEventListener("mousemove", onmove, false);
+                            window.removeEventListener("mouseup", onup, false);
                             tile_cursor.style.display = "none";
                             
                             /// Reset to the default tool.
@@ -870,6 +961,7 @@ document.addEventListener("DOMContentLoaded", function ()
                             
                             window.removeEventListener("keypress", editor.cancel_draw_mode, false);
                             delete editor.cancel_draw_mode;
+                            document.title = editor.game_name;
                         }
                     };
                     
