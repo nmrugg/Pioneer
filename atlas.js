@@ -934,6 +934,10 @@ document.addEventListener("DOMContentLoaded", function ()
                         
                         ///NOTE: \u00d7 is the &times; symbols (i.e., mathmatical times).
                         document.title = pos.x + " \u00d7 " + pos.y + " - " + editor.game_name;
+                        
+                        if (e.buttons === 1) {
+                            onup(e);
+                        }
                     };
                     
                     window.addEventListener("mousemove", onmove, false);
@@ -941,12 +945,22 @@ document.addEventListener("DOMContentLoaded", function ()
                     onup = function(e)
                     {
                         var asset_id,
+                            className,
                             target = e.srcElement || e.originalTarget,
                             tile,
                             sector,
                             pos = get_tile_pos({x: e.clientX - (editor.selected_tile.tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (editor.selected_tile.tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
                         
-                        if (target.className === "map") {
+                        if (e.buttons !== 1) {
+                            return;
+                        }
+                        
+                        /// For some reason, Firefox occationally throws this error: "Error: Permission denied to access property 'className'".
+                        try {
+                            className = target.className;
+                        } catch (e) {}
+                        
+                        if (className === "map") {
                             e.stopPropagation();
                             ///TODO: Determine the current level.
                             var level = 0;

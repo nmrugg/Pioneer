@@ -8,7 +8,8 @@ html, body {
 }
 
 .container {
-    position: absolute;
+    /*NOTE If the container does not have a "fixed" position, the user could scroll with the auto scroll middle button. */
+    position: fixed;
 }
 
 .editor {
