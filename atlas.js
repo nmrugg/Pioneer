@@ -219,6 +219,7 @@ document.addEventListener("DOMContentLoaded", function ()
     
     editor.cur_map.canvases.forEach(function (canvas)
     {
+        canvas.cx = canvas.el.getContext("2d");
         canvas.el.className = "map";
         
         editor.cur_map.container.appendChild(canvas.el);
@@ -688,7 +689,7 @@ document.addEventListener("DOMContentLoaded", function ()
                             editor.draw_tilesheet();
                         };
                         
-                        editor.assets.every(function (asset, i)
+                        editor.assets.names.every(function (asset, i)
                         {
                             if (which === asset) {
                                 num = i;
@@ -734,14 +735,20 @@ document.addEventListener("DOMContentLoaded", function ()
                     assets.sort();
                     
                     /// Store in the editor object so that other functions can get access to it.
-                    editor.assets = assets;
+                    editor.assets = {
+                        images: [],
+                        names:  assets
+                    };
                     
                     tilesheet_select.options.length = 0;
                     
-                    editor.assets.forEach(function (asset)
+                    assets.forEach(function (asset, i)
                     {
                         ///NOTE: new Option(text, value, default_selected, selected);
                         tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, (asset === selected_tilesheet));
+                        ///TODO: Load these before anything else with a progress bar.
+                        editor.assets.images[i] = document.createElement("img");
+                        editor.assets.images[i].src = "/assets/" + asset;
                     });
                     
                     load_tilesheet(tilesheet_select.value);
@@ -923,7 +930,9 @@ document.addEventListener("DOMContentLoaded", function ()
                     
                     onup = function(e)
                     {
-                        var target = e.srcElement || e.originalTarget,
+                        var asset_id,
+                            target = e.srcElement || e.originalTarget,
+                            tile,
                             sector,
                             pos = get_tile_pos({x: e.clientX - (editor.selected_tile.tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (editor.selected_tile.tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
                         
@@ -931,16 +940,33 @@ document.addEventListener("DOMContentLoaded", function ()
                             e.stopPropagation();
                             ///TODO: Determine the current level.
                             var level = 0;
+                            
+                            /// Does this map already have assets added?
+                            if (!editor.cur_map.assets) {
+                                editor.cur_map.assets = [];
+                            }
+                            
+                            /// Does this map already uses this asset?
+                            asset_id = editor.cur_map.assets.indexOf(editor.selected_tile.tilesheet)
+                            if (asset_id === -1) {
+                                asset_id = editor.cur_map.assets.length;
+                                editor.cur_map.assets[asset_id] = editor.selected_tile.tilesheet;
+                            }
+                            
                             ///TODO: Check to see if other tiles exist.
                             sector = editor.cur_map.data[(pos.x - (pos.x % 1000)) / 1000][(pos.y - (pos.y % 1000)) / 1000];
                             
                             sector[sector.length] = {
+                                a: asset_id,
                                 l: level,
                                 t: editor.selected_tile.tile_num,
-                                s: editor.selected_tile.tilesheet_num,
                                 x: pos.x,
                                 y: pos.y
                             };
+                            
+                            tile = editor.tiles[editor.cur_map.assets[asset_id]][editor.selected_tile.tile_num];
+                            
+                            editor.cur_map.canvases[level].cx.drawImage(editor.assets.images[editor.selected_tile.tilesheet_num], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
                         }
                     };
                     
