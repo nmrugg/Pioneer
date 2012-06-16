@@ -4,10 +4,11 @@ html, body {
     margin: 0;
     overflow: hidden;
     font-family: "Bitstream Vera Serif", serif;
+    background: #000;
 }
 
 .container {
-    position: fixed;
+    position: absolute;
 }
 
 .editor {
@@ -82,4 +83,8 @@ html, body {
 }
 .active-tab {
     background: #CCDAE8;
+}
+
+.map {
+    position: absolute;
 }

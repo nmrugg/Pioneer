@@ -225,6 +225,16 @@ document.addEventListener("DOMContentLoaded", function ()
         editor.cur_map.container.appendChild(canvas.el);
     });
     
+    /// Set the background color of the lowest canvas to white so that the black background does not show through.
+    ///TODO: Make this customizeable per map.
+    editor.cur_map.canvases[0].el.style.backgroundColor = "#FFF";
+    
+    /// Prevent the browser from trying to select text or draw elements when clicking on the canvas.
+    editor.cur_map.canvases[editor.cur_map.canvases.length - 1].el.onmousedown = function (e)
+    {
+        e.preventDefault();
+    };
+    
     document.body.appendChild(editor.cur_map.container);
     
     editor.draw_map = function (which)
