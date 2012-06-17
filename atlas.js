@@ -300,14 +300,20 @@ document.addEventListener("DOMContentLoaded", function ()
         map_size_box.type = "text";
         editor.bind_input_box(map_size_box, "", "8000 x 8000", function (value)
         {
+            var new_size = editor.parse_dimension(value);
+            
+            if (editor.cur_map.size && new_size.x === editor.cur_map.size.x && new_size.y === editor.cur_map.size.y) {
+                /// Don't bother updating if nothing changed.
+                return;
+            }
             editor.cur_map.size = editor.parse_dimension(value);
             editor.cur_map.canvases.forEach(function (canvas)
             {
                 var i,
                     x,
-                    x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % 1000)) / 1000,
+                    x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % 320)) / 320,
                     y,
-                    y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 1000)) / 1000;
+                    y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 320)) / 320;
                 
                 canvas.el.setAttribute("width",  editor.cur_map.size.x);
                 canvas.el.setAttribute("height", editor.cur_map.size.y);
@@ -905,19 +911,6 @@ document.addEventListener("DOMContentLoaded", function ()
                             }
                         }
                         
-                        if (x < 0) {
-                            x = 0;
-                        }
-                        if (y < 0) {
-                            y = 0;
-                        }
-                        if (x > editor.cur_map.size.x) {
-                            x = editor.cur_map.size.x;
-                        }
-                        if (y > editor.cur_map.size.y) {
-                            y = editor.cur_map.size.y;
-                        }
-                        
                         return {x: x, y: y};
                     }
                     
@@ -949,6 +942,8 @@ document.addEventListener("DOMContentLoaded", function ()
                             target = e.srcElement || e.originalTarget,
                             tile,
                             sector,
+                            sector_x,
+                            sector_y,
                             pos = get_tile_pos({x: e.clientX - (editor.selected_tile.tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (editor.selected_tile.tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
                         
                         if (e.buttons !== 1) {
@@ -980,7 +975,25 @@ document.addEventListener("DOMContentLoaded", function ()
                             }
                             
                             ///TODO: Check to see if other tiles exist.
-                            sector = editor.cur_map.data[(pos.x - (pos.x % 1000)) / 1000][(pos.y - (pos.y % 1000)) / 1000];
+                            
+                            /// Make sure that the position is inside the sectors.
+                            sector_x = (pos.x - (pos.x % 320)) / 320;
+                            if (sector_x < 0) {
+                                sector_x = 0;
+                            }
+                            if (sector_x >= editor.cur_map.data.length) {
+                                sector_x = editor.cur_map.data.length - 1;
+                            }
+                            
+                            sector_y = (pos.y - (pos.y % 320)) / 320;
+                            if (sector_y < 0) {
+                                sector_y = 0;
+                            }
+                            if (sector_y >= editor.cur_map.data[sector_x].length) {
+                                sector_y = editor.cur_map.data[sector_x].length - 1;
+                            }
+                            
+                            sector = editor.cur_map.data[sector_x][sector_y];
                             
                             sector[sector.length] = {
                                 a: asset_id,
