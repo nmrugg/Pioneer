@@ -952,10 +952,12 @@ document.addEventListener("DOMContentLoaded", function ()
                             pos = get_tile_pos({x: e.clientX - (editor.selected_tile.tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (editor.selected_tile.tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
                         
                         if (e.buttons !== 1) {
+                            /// Only accept left clicks.
                             return;
                         }
                         
-                        /// For some reason, Firefox occationally throws this error: "Error: Permission denied to access property 'className'".
+                        /// For some reason, Firefox occationally throws this error: "Error: Permission denied to access property 'className'",
+                        /// so put it in a try/catch.
                         try {
                             className = target.className;
                         } catch (e) {}
@@ -990,6 +992,8 @@ document.addEventListener("DOMContentLoaded", function ()
                             
                             tile = editor.tiles[editor.cur_map.assets[asset_id]][editor.selected_tile.tile_num];
                             
+                            /// Since nothing can over lap on the same level, clear the space first.
+                            editor.cur_map.canvases[level].cx.clearRect(pos.x, pos.y, tile.w, tile.h);
                             editor.cur_map.canvases[level].cx.drawImage(editor.assets.images[editor.selected_tile.tilesheet_num], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
                         }
                     };
