@@ -137,9 +137,13 @@ require("http").createServer(function (request, response)
             if (exists) {
                 ///NOTE: .substr(1) trims off the leading slash (/).
                 filename = url_parts.pathname.substr(1);
-            } else {
+            } else if (url_parts.pathname === "/") {
                 /// If the file does not exist, load the index.
                 filename = "index.html";
+            } else {
+                response.writeHead(404, {"Content-Type": "text/plain"});
+                response.end("File not found");
+                return;
             }
             
             fs.stat(filename, function (err, stats)
