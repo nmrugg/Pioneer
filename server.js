@@ -138,9 +138,11 @@ require("http").createServer(function (request, response)
                 ///NOTE: .substr(1) trims off the leading slash (/).
                 filename = url_parts.pathname.substr(1);
             } else if (url_parts.pathname === "/") {
-                /// If the file does not exist, load the index.
+                /// If it is trying to access the root, load the index.
                 filename = "index.html";
+                
             } else {
+                /// If the file does not exist at all, throw a 404 error, and exit.
                 response.writeHead(404, {"Content-Type": "text/plain"});
                 response.end("File not found");
                 return;
