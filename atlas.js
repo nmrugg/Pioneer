@@ -15,11 +15,11 @@
         
         /// Array Remove - By John Resig (MIT Licensed)
         /// http://ejohn.org/blog/javascript-array-remove/
-        Array.prototype.remove = function(from, to)
+        editor.array_remove = function(array, from, to)
         {
-            var rest = this.slice((to || from) + 1 || this.length);
-            this.length = from < 0 ? this.length + from : from;
-            return this.push.apply(this, rest);
+            var rest = array.slice((to || from) + 1 || array.length);
+            array.length = from < 0 ? array.length + from : from;
+            return array.push.apply(array, rest);
         };
         
         editor.game_name = "Pioneer";
@@ -46,8 +46,8 @@
             }
             
             /**
-            * Create tabs
-            */
+             * Create tabs
+             */
             (function ()
             {
                 var cur_tab,
@@ -142,13 +142,13 @@
         }());
         
         /**
-        * Parse a width x height dimension string.
-        *
-        * @example editor.parse_dimension("32 x 64"); /// Returns {x 32: y: 64}
-        * @example editor.parse_dimension("32");      /// Returns {x 32: y: 32}
-        * @param   str (string) The string to parse.
-        * @note    If there is only one parameter (and no "x"), the parameter will be used for both the width and height.
-        */
+         * Parse a width x height dimension string.
+         *
+         * @example editor.parse_dimension("32 x 64"); /// Returns {x 32: y: 64}
+         * @example editor.parse_dimension("32");      /// Returns {x 32: y: 32}
+         * @param   str (string) The string to parse.
+         * @note    If there is only one parameter (and no "x"), the parameter will be used for both the width and height.
+         */
         editor.parse_dimension = function (str)
         {
             var split,
@@ -202,8 +202,8 @@
         
         
         /**
-        * Create the map canvases
-        */
+         * Create the map canvases
+         */
         
         editor.camera = {x: 0, y: 0};
         
@@ -278,8 +278,8 @@
         };
         
         /**
-        * Create World editor (tab 0)
-        */
+         * Create World editor (tab 0)
+         */
         (function ()
         {
             var map_box   = document.createElement("input"),
@@ -315,7 +315,7 @@
             });
             
             map_size_box.type = "text";
-            editor.bind_input_box(map_size_box, "", "8000 x 8000", function (value)
+            editor.bind_input_box(map_size_box, "", "4000 x 4000", function (value)
             {
                 var new_size = editor.parse_dimension(value);
                 
@@ -323,51 +323,52 @@
                     /// Don't bother updating if nothing changed.
                     return;
                 }
+                //  return;
                 editor.cur_map.size = editor.parse_dimension(value);
                 /**
-                * Resize map canvases and map sectors.
-                */
+                 * Resize map canvases and map sectors.
+                 */
                 editor.cur_map.canvases.forEach(function (canvas)
+                {
+                    canvas.el.setAttribute("width",  editor.cur_map.size.x);
+                    canvas.el.setAttribute("height", editor.cur_map.size.y);
+                });
+                
+                window.setTimeout(function ()
                 {
                     var i,
                         x,
-                        x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % 320)) / 320,
+                        x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % 640)) / 640,
                         y,
-                        y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 320)) / 320;
-                    
-                    canvas.el.setAttribute("width",  editor.cur_map.size.x);
-                    canvas.el.setAttribute("height", editor.cur_map.size.y);
+                        y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 640)) / 640;
                     
                     if (!editor.cur_map.data) {
                         editor.cur_map.data = [];
                     }
                     
                     ///TODO: Check and warn about deleting data.
-                    for (x = 0; x <= x_sectors; x += 1) {
+                    for (x = 0; x < x_sectors; x += 1) {
                         if (!editor.cur_map.data[x]) {
                             editor.cur_map.data[x] = [];
                         }
-                        for (y = 0; y <= y_sectors; y += 1) {
+                        for (y = 0; y < y_sectors; y += 1) {
                             if (!editor.cur_map.data[x][y]) {
                                 editor.cur_map.data[x][y] = [];
-                            } else {
-                                for (i = editor.cur_map.data[x][y].length - 1; i >= 0; i -= 1) {
-                                    if (editor.cur_map.data[x][y][i].x > editor.cur_map.size.x || editor.cur_map.data[x][y][i].y > editor.cur_map.size.y) {
-                                        ///NOTE: It should warn first.
-                                        delete editor.cur_map.data[x][y][i];
-                                    }
-                                }
-                            }
-                            if (editor.cur_map.data[x][y].length > y_sectors) {
-                                editor.cur_map.data[x][y] = editor.cur_map.data[x][y].slice(0, y_sectors);
                             }
                         }
-                        if (editor.cur_map.data[x].length > x_sectors) {
-                            editor.cur_map.data[x] = editor.cur_map.data[x].slice(0, x_sectors);
+                        if (editor.cur_map.data[x].length > y_sectors) {
+                            console.log("1");
+                            editor.cur_map.data[x] = editor.cur_map.data[x].slice(0, y_sectors);
                         }
                     }
-                });
+                    if (editor.cur_map.data.length > x_sectors) {
+                        console.log("2");
+                        editor.cur_map.data = editor.cur_map.data.slice(0, x_sectors);
+                    }
+                    
+                }, 100);
                 editor.draw_map(editor.world_map_num);
+                //console.log(JSON.stringify(editor.cur_map.data));
             });
             
             tabs[0].appendChild(document.createTextNode("Snap: "));
@@ -448,8 +449,8 @@
                 tilesheet_options.appendChild(size_box);
                 
                 /**
-                * Calculate the position and size of the tilesheet selection rectangle.
-                */
+                 * Calculate the position and size of the tilesheet selection rectangle.
+                 */
                 function get_selection_rec(mouse_pos, dont_snap)
                 {
                     var canvas_pos = tilesheet_canvas.getClientRects()[0],
@@ -508,8 +509,8 @@
                 }
                 
                 /**
-                * Draw the tile selection square or highlight a tile.
-                */
+                 * Draw the tile selection square or highlight a tile.
+                 */
                 tilesheet_canvas.onmousemove = function (e)
                 {
                     var tile_selected;
@@ -600,8 +601,8 @@
                 };
                 
                 /**
-                * Draw grid when hovering over the Auto Split button.
-                */
+                 * Draw grid when hovering over the Auto Split button.
+                 */
                 auto_split.onmouseover = function ()
                 {
                     var height = Number(tilesheet_canvas.height),
@@ -636,16 +637,16 @@
                     tilesheet_canvas_cx.stroke();
                 };
                 /**
-                * Remove the grid when the mouse moves off of the button.
-                */
+                 * Remove the grid when the mouse moves off of the button.
+                 */
                 auto_split.onmouseout = function ()
                 {
                     editor.draw_tilesheet();
                 };
                 
                 /**
-                * Split up all of the tiles.
-                */
+                 * Split up all of the tiles.
+                 */
                 auto_split.onclick = function ()
                 {
                     var ajax = new window.XMLHttpRequest(),
@@ -797,8 +798,8 @@
         
         
         /**
-        * Get tiles at start up.
-        */
+         * Get tiles at start up.
+         */
         (function get_tiles()
         {
             var ajax = new window.XMLHttpRequest();
@@ -819,13 +820,13 @@
                 editor.get_assets();
             });
             
-            //ajax.send();
+            ajax.send();
         }());
         
     
         /**
-        * Enabled drag and drop uploading.
-        */
+         * Enabled drag and drop uploading.
+         */
         (function ()
         {
             function ignore_event(e)
@@ -935,8 +936,8 @@
                         }
                         
                         /**
-                        * Move the floating image with the cursor.
-                        */
+                         * Move the floating image with the cursor.
+                         */
                         onmove = function (e)
                         {
                             /// Turn off snap with the ctrl key.
@@ -998,7 +999,7 @@
                                 ///TODO: Check to see if other tiles exist.
                                 
                                 /// Make sure that the position is inside the sectors.
-                                sector_x = (pos.x - (pos.x % 320)) / 320;
+                                sector_x = (pos.x - (pos.x % 640)) / 640;
                                 if (sector_x < 0) {
                                     sector_x = 0;
                                 }
@@ -1006,7 +1007,7 @@
                                     sector_x = editor.cur_map.data.length - 1;
                                 }
                                 
-                                sector_y = (pos.y - (pos.y % 320)) / 320;
+                                sector_y = (pos.y - (pos.y % 640)) / 640;
                                 if (sector_y < 0) {
                                     sector_y = 0;
                                 }
@@ -1028,7 +1029,7 @@
                                         /// Erase the old tile.
                                         editor.cur_map.canvases[level].cx.clearRect(sector[i].x, sector[i].y, editor.tiles[editor.cur_map.assets[sector[i].a]][sector[i].t].w, editor.tiles[editor.cur_map.assets[sector[i].a]][sector[i].t].h);
                                         /// Remove tiles under (completely or partially) this one.
-                                        sector.remove(i);
+                                        editor.array_remove(sector, i);
                                     }
                                 }
                                 
@@ -1049,8 +1050,8 @@
                         window.addEventListener("mouseup", onup, false);
                         
                         /**
-                        * Allow the user to get out of draw mode by pressing escape.
-                        */
+                         * Allow the user to get out of draw mode by pressing escape.
+                         */
                         editor.cancel_draw_mode = function(e)
                         {
                             if (e.keyCode === 27) { /// Escape
