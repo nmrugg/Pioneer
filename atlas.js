@@ -242,10 +242,6 @@
             editor.cur_map.container.appendChild(canvas.el);
         });
         
-        /// Set the background color of the lowest canvas to white so that the black background does not show through.
-        ///TODO: Make this customizeable per map.
-        editor.cur_map.canvases[0].el.style.backgroundColor = "#FFF";
-        
         /// Prevent the browser from trying to select text or draw elements when clicking on the canvas.
         editor.cur_map.canvases[editor.cur_map.canvases.length - 1].el.onmousedown = function (e)
         {
@@ -323,7 +319,7 @@
                     /// Don't bother updating if nothing changed.
                     return;
                 }
-                //  return;
+                
                 editor.cur_map.size = editor.parse_dimension(value);
                 /**
                  * Resize map canvases and map sectors.
@@ -343,6 +339,7 @@
                         y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 640)) / 640;
                     
                     if (!editor.cur_map.data) {
+                        ///TODO: It could also create a JSON string and then stringify it.
                         editor.cur_map.data = [];
                     }
                     
@@ -357,18 +354,15 @@
                             }
                         }
                         if (editor.cur_map.data[x].length > y_sectors) {
-                            console.log("1");
                             editor.cur_map.data[x] = editor.cur_map.data[x].slice(0, y_sectors);
                         }
                     }
                     if (editor.cur_map.data.length > x_sectors) {
-                        console.log("2");
                         editor.cur_map.data = editor.cur_map.data.slice(0, x_sectors);
                     }
                     
                 }, 100);
                 editor.draw_map(editor.world_map_num);
-                //console.log(JSON.stringify(editor.cur_map.data));
             });
             
             tabs[0].appendChild(document.createTextNode("Snap: "));
@@ -1076,7 +1070,6 @@
                     tile_cursor.setAttribute("height",  editor.selected_tile.tile.h);
                     
                     tile_img.src = "/assets/" + editor.selected_tile.tilesheet;
-                    document.body.appendChild(tile_img);
                 };
             }());
             
@@ -1096,5 +1089,8 @@
         }());
     }
     
-    document.addEventListener("DOMContentLoaded", start, false);
+    document.addEventListener("DOMContentLoaded", function ()
+    {
+        window.setTimeout(start, 0);
+    }, false);
 }());
