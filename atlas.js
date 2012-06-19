@@ -1011,7 +1011,11 @@
                                     sector_y = editor.cur_map.data[sector_x].length - 1;
                                 }
                                 
-                                
+                                /**
+                                 * Check for and remove overlapping tiles.
+                                 *
+                                 * @return FALSE if no exact matches, TRUE if an exact match (same position and same tile)
+                                 */
                                 remove_overlapping = function(sector_x, sector_y)
                                 {
                                     var sector,
@@ -1031,7 +1035,7 @@
                                         if (tmp_tile.x < pos.x + tile.w && tmp_tile.x + tmp_base_tile.w > pos.x && tmp_tile.y < pos.y + tile.h && tmp_tile.y + tmp_base_tile.h > pos.y) {
                                             /// If it is the same exact tile on the same exact position, don't do anything.
                                             if (editor.selected_tile.tile_num === tmp_tile.t && asset_id === tmp_tile.a && tmp_tile.x === pos.x && tmp_tile.y === pos.y) {
-                                                return;
+                                                return true;
                                             }
                                             /// Erase the old tile.
                                             
@@ -1040,15 +1044,20 @@
                                             editor.array_remove(sector, i);
                                         }
                                     }
+                                    return false;
                                 }
                                 
                                 ///NOTE: We have to assume that tiles can be no larger than a sector; however, they can overlap multiple sectors.
                                 /// Check all of the sourounding sectors for overlapping tiles.
+                                
+                                /// First, check the sector that the tile will be added to to see if there is an exact match.
+                                if (remove_overlapping(sector_x, sector_y) === true) {
+                                    return;
+                                }
                                 remove_overlapping(sector_x - 1, sector_y - 1);
                                 remove_overlapping(sector_x - 1, sector_y);
                                 remove_overlapping(sector_x - 1, sector_y + 1);
                                 remove_overlapping(sector_x, sector_y - 1);
-                                remove_overlapping(sector_x, sector_y);
                                 remove_overlapping(sector_x, sector_y + 1);
                                 remove_overlapping(sector_x + 1, sector_y - 1);
                                 remove_overlapping(sector_x + 1, sector_y);
