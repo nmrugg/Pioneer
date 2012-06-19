@@ -955,9 +955,13 @@
                             var asset_id,
                                 className,
                                 i,
+                                overlaps_down,
+                                overlaps_right,
                                 remove_overlapping,
                                 target = e.srcElement || e.originalTarget,
                                 tile,
+                                tile_bottom,
+                                tile_right,
                                 sector,
                                 sector_x,
                                 sector_y,
@@ -993,7 +997,6 @@
                                 
                                 tile = editor.tiles[editor.cur_map.assets[asset_id]][editor.selected_tile.tile_num];
                                 
-                                
                                 /// Make sure that the position is inside the sectors.
                                 sector_x = (pos.x - (pos.x % 640)) / 640;
                                 if (sector_x < 0) {
@@ -1010,6 +1013,12 @@
                                 if (sector_y >= editor.cur_map.data[sector_x].length) {
                                     sector_y = editor.cur_map.data[sector_x].length - 1;
                                 }
+                                
+                                tile_right  = pos.x + tile.w;
+                                tile_bottom = pos.y + tile.h;
+                                
+                                overlaps_right = (sector_x < (tile_right  - (tile_right  % 640)) / 640);
+                                overlaps_down  = (sector_y < (tile_bottom - (tile_bottom % 640)) / 640);
                                 
                                 /**
                                  * Check for and remove overlapping tiles.
@@ -1054,14 +1063,21 @@
                                 if (remove_overlapping(sector_x, sector_y) === true) {
                                     return;
                                 }
+                                
                                 remove_overlapping(sector_x - 1, sector_y - 1);
                                 remove_overlapping(sector_x - 1, sector_y);
-                                remove_overlapping(sector_x - 1, sector_y + 1);
                                 remove_overlapping(sector_x, sector_y - 1);
-                                remove_overlapping(sector_x, sector_y + 1);
-                                remove_overlapping(sector_x + 1, sector_y - 1);
-                                remove_overlapping(sector_x + 1, sector_y);
-                                remove_overlapping(sector_x + 1, sector_y + 1);
+                                if (overlaps_down) {
+                                    remove_overlapping(sector_x - 1, sector_y + 1);
+                                    remove_overlapping(sector_x, sector_y + 1);
+                                }
+                                if (overlaps_right) {
+                                    remove_overlapping(sector_x + 1, sector_y - 1);
+                                    remove_overlapping(sector_x + 1, sector_y);
+                                }
+                                if (overlaps_down && overlaps_right) {
+                                    remove_overlapping(sector_x + 1, sector_y + 1);
+                                }
                                 
                                 sector = editor.cur_map.data[sector_x][sector_y];
                                 
