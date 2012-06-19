@@ -1032,7 +1032,7 @@
                                     for (i = sector.length - 1; i >= 0; i -= 1) {
                                         tmp_tile = sector[i];
                                         tmp_base_tile = editor.tiles[editor.cur_map.assets[tmp_tile.a]][tmp_tile.t];
-                                        if (tmp_tile.x < pos.x + tile.w && tmp_tile.x + tmp_base_tile.w > pos.x && tmp_tile.y < pos.y + tile.h && tmp_tile.y + tmp_base_tile.h > pos.y) {
+                                        if (tmp_tile.l === level && tmp_tile.x < tile_right && tmp_tile.x + tmp_base_tile.w > pos.x && tmp_tile.y < tile_bottom && tmp_tile.y + tmp_base_tile.h > pos.y) {
                                             /// If it is the same exact tile on the same exact position, don't do anything.
                                             if (editor.selected_tile.tile_num === tmp_tile.t && asset_id === tmp_tile.a && tmp_tile.x === pos.x && tmp_tile.y === pos.y) {
                                                 return true;
