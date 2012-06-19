@@ -383,11 +383,17 @@
         */
         (function ()
         {
-            var tilesheet_canvas    = document.createElement("canvas"),
+            var level_box = document.createElement("input"),
+                tilesheet_canvas    = document.createElement("canvas"),
                 tilesheet_canvas_cx,
                 tilesheet_container = document.createElement("div"),
                 tilesheet_options   = document.createElement("div"),
                 tilesheet_select    = document.createElement("select");
+            
+            editor.bind_input_box(level_box, "draw_on_canvas_level", "0", function (value)
+            {
+                editor.draw_on_canvas_level = value;
+            });
             
             tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
             
@@ -415,6 +421,10 @@
                 /// Make sure that the current tab is visible.
                 tabs[window.localStorage.getItem("cur_tab")].style.display = "block";
             }, 0);
+            
+            tabs[1].appendChild(document.createTextNode("Drawing Level: "));
+            tabs[1].appendChild(level_box);
+            tabs[1].appendChild(document.createElement("br"));
             
             tabs[1].appendChild(tilesheet_select);
             tabs[1].appendChild(tilesheet_options);
@@ -955,6 +965,7 @@
                             var asset_id,
                                 className,
                                 i,
+                                level = editor.draw_on_canvas_level,
                                 overlaps_down,
                                 overlaps_right,
                                 remove_overlapping,
@@ -980,8 +991,6 @@
                             
                             if (className === "map") {
                                 e.stopPropagation();
-                                ///TODO: Determine the current level.
-                                var level = 0;
                                 
                                 /// Does this map already have assets added?
                                 if (!editor.cur_map.assets) {
