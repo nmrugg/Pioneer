@@ -955,6 +955,7 @@
                             var asset_id,
                                 className,
                                 i,
+                                remove_overlapping,
                                 target = e.srcElement || e.originalTarget,
                                 tile,
                                 sector,
@@ -990,7 +991,8 @@
                                     editor.cur_map.assets[asset_id] = editor.selected_tile.tilesheet;
                                 }
                                 
-                                ///TODO: Check to see if other tiles exist.
+                                tile = editor.tiles[editor.cur_map.assets[asset_id]][editor.selected_tile.tile_num];
+                                
                                 
                                 /// Make sure that the position is inside the sectors.
                                 sector_x = (pos.x - (pos.x % 640)) / 640;
@@ -1009,23 +1011,50 @@
                                     sector_y = editor.cur_map.data[sector_x].length - 1;
                                 }
                                 
-                                sector = editor.cur_map.data[sector_x][sector_y];
                                 
-                                tile = editor.tiles[editor.cur_map.assets[asset_id]][editor.selected_tile.tile_num];
-                                
-                                /// It needs to go in reverse because it may remove items.
-                                for (i = sector.length - 1; i >= 0; i -= 1) {
-                                    if (sector[i].x >= pos.x && sector[i].x < pos.x + tile.w && sector[i].y >= pos.y && sector[i].y < pos.y + tile.h) {
-                                        /// If it is the same exact tile on the same exact position, don't do anything.
-                                        if (editor.selected_tile.tile_num === sector[i].t && asset_id === sector[i].a && sector[i].x === pos.x && sector[i].y === pos.y) {
-                                            return;
+                                remove_overlapping = function(sector_x, sector_y)
+                                {
+                                    var sector,
+                                        tmp_base_tile,
+                                        tmp_tile;
+                                    
+                                    if (!editor.cur_map.data[sector_x] || !editor.cur_map.data[sector_x][sector_y]) {
+                                        return;
+                                    }
+                                    
+                                    sector = editor.cur_map.data[sector_x][sector_y];
+                                    
+                                    /// It needs to go in reverse because it may remove items.
+                                    for (i = sector.length - 1; i >= 0; i -= 1) {
+                                        tmp_tile = sector[i];
+                                        tmp_base_tile = editor.tiles[editor.cur_map.assets[tmp_tile.a]][tmp_tile.t];
+                                        if (tmp_tile.x < pos.x + tile.w && tmp_tile.x + tmp_base_tile.w > pos.x && tmp_tile.y < pos.y + tile.h && tmp_tile.y + tmp_base_tile.h > pos.y) {
+                                            /// If it is the same exact tile on the same exact position, don't do anything.
+                                            if (editor.selected_tile.tile_num === tmp_tile.t && asset_id === tmp_tile.a && tmp_tile.x === pos.x && tmp_tile.y === pos.y) {
+                                                return;
+                                            }
+                                            /// Erase the old tile.
+                                            
+                                            editor.cur_map.canvases[level].cx.clearRect(tmp_tile.x, tmp_tile.y, tmp_base_tile.w, tmp_base_tile.h);
+                                            /// Remove tiles under (completely or partially) this one.
+                                            editor.array_remove(sector, i);
                                         }
-                                        /// Erase the old tile.
-                                        editor.cur_map.canvases[level].cx.clearRect(sector[i].x, sector[i].y, editor.tiles[editor.cur_map.assets[sector[i].a]][sector[i].t].w, editor.tiles[editor.cur_map.assets[sector[i].a]][sector[i].t].h);
-                                        /// Remove tiles under (completely or partially) this one.
-                                        editor.array_remove(sector, i);
                                     }
                                 }
+                                
+                                ///NOTE: We have to assume that tiles can be no larger than a sector; however, they can overlap multiple sectors.
+                                /// Check all of the sourounding sectors for overlapping tiles.
+                                remove_overlapping(sector_x - 1, sector_y - 1);
+                                remove_overlapping(sector_x - 1, sector_y);
+                                remove_overlapping(sector_x - 1, sector_y + 1);
+                                remove_overlapping(sector_x, sector_y - 1);
+                                remove_overlapping(sector_x, sector_y);
+                                remove_overlapping(sector_x, sector_y + 1);
+                                remove_overlapping(sector_x + 1, sector_y - 1);
+                                remove_overlapping(sector_x + 1, sector_y);
+                                remove_overlapping(sector_x + 1, sector_y + 1);
+                                
+                                sector = editor.cur_map.data[sector_x][sector_y];
                                 
                                 sector[sector.length] = {
                                     a: asset_id,
