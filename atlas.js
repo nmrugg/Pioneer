@@ -337,7 +337,6 @@
                                 draw_sector(map, starting_sector_x + i, starting_sector_y - distance, function (success)
                                 {
                                     if (success) {
-                                        console.log(starting_sector_x + i, starting_sector_y - distance);
                                         sectors_drawn += 1;
                                     }
                                     loop(i + 1);
@@ -347,7 +346,6 @@
                             }
                         };
                         /// Is this row on the map?
-                        console.log("top ", starting_sector_y,  distance, starting_sector_y >= distance);
                         if (starting_sector_y >= distance) {
                             loop(-distance);
                         } else {
@@ -364,7 +362,6 @@
                                 draw_sector(map, starting_sector_x + distance, starting_sector_y + i, function (success)
                                 {
                                     if (success) {
-                                        console.log(starting_sector_x + distance, starting_sector_y + i);
                                         sectors_drawn += 1;
                                     }
                                     loop(i - 1);
@@ -375,7 +372,6 @@
                         };
                         
                         /// Is this column on the map?
-                        console.log("right ", starting_sector_x + distance , map_size_x, starting_sector_x + distance < map_size_x);
                         if (starting_sector_x + distance < map_size_x) {
                             loop(distance);
                         } else {
@@ -392,7 +388,6 @@
                                 draw_sector(map, starting_sector_x + i, starting_sector_y + distance, function (success)
                                 {
                                     if (success) {
-                                        console.log(starting_sector_x + i, starting_sector_y + distance);
                                         sectors_drawn += 1;
                                     }
                                     loop(i + 1);
@@ -403,7 +398,6 @@
                         };
                         
                         /// Is this row on the map?
-                        console.log("bottom ", starting_sector_y + distance , map_size_y, starting_sector_y + distance < map_size_y);
                         if (starting_sector_y + distance < map_size_y) {
                             loop(-distance);
                         } else {
@@ -420,7 +414,6 @@
                                 draw_sector(map, starting_sector_x - distance, starting_sector_y + i, function (success)
                                 {
                                     if (success) {
-                                        console.log(starting_sector_x - distance, starting_sector_y + i);
                                         sectors_drawn += 1;
                                     }
                                     loop(i + 1);
@@ -431,7 +424,6 @@
                         };
                         
                         /// Is this column on the map?
-                        console.log("left ", starting_sector_x , distance, starting_sector_x >= distance);
                         if (starting_sector_x >= distance) {
                             ///NOTE: The +1 is to skip the top left sector because it was already drawn by draw_top().
                             loop(-distance + 1);
@@ -451,11 +443,8 @@
                                 {
                                     draw_left(distance, function ()
                                     {
-                                        console.log("total: ", sectors_drawn,  total_sectors);
                                         if (sectors_drawn < total_sectors) {
-                                            //window.setTimeout(function (){
                                             draw_loop(distance + 1);
-                                            //}, 100);
                                         }
                                     });
                                 });
