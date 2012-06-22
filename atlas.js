@@ -254,10 +254,11 @@
         {
             var que = [];
             
-            function draw_sector(map, sector_x, sector_y, callback)
+            function draw_sector(map, sector_x, sector_y, delay, callback)
             {
                 var base_tile,
                     i,
+                    loop_and_draw,
                     sector,
                     tile;
                 
@@ -273,8 +274,8 @@
                     return;
                 }
                 
-                //window.setTimeout(function ()
-                //{
+                loop_and_draw = function ()
+                {
                     /// Structure:
                     /// map.data[sector_x][sector_y][tiles]
                     /// The tiles object:
@@ -291,7 +292,16 @@
                         map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
                     }
                     callback(true);
-                //}, 100);
+                };
+                
+                if (delay) {
+                    window.setTimeout(function ()
+                    {
+                        loop_and_draw();
+                    }, 50);
+                } else {
+                    loop_and_draw();
+                }
             }
             
             return function (which, starting_pos)
@@ -334,7 +344,7 @@
                         function loop(i)
                         {
                             if (i <= distance) {
-                                draw_sector(map, starting_sector_x + i, starting_sector_y - distance, function (success)
+                                draw_sector(map, starting_sector_x + i, starting_sector_y - distance, distance > 1, function (success)
                                 {
                                     if (success) {
                                         sectors_drawn += 1;
@@ -359,7 +369,7 @@
                         function loop(i)
                         {
                             if (i > -distance) {
-                                draw_sector(map, starting_sector_x + distance, starting_sector_y + i, function (success)
+                                draw_sector(map, starting_sector_x + distance, starting_sector_y + i, distance > 1, function (success)
                                 {
                                     if (success) {
                                         sectors_drawn += 1;
@@ -385,7 +395,7 @@
                         function loop(i)
                         {
                             if (i < distance) {
-                                draw_sector(map, starting_sector_x + i, starting_sector_y + distance, function (success)
+                                draw_sector(map, starting_sector_x + i, starting_sector_y + distance, distance > 1, function (success)
                                 {
                                     if (success) {
                                         sectors_drawn += 1;
@@ -411,7 +421,7 @@
                         function loop(i)
                         {
                             if (i < distance) {
-                                draw_sector(map, starting_sector_x - distance, starting_sector_y + i, function (success)
+                                draw_sector(map, starting_sector_x - distance, starting_sector_y + i, distance > 1, function (success)
                                 {
                                     if (success) {
                                         sectors_drawn += 1;
