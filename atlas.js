@@ -261,7 +261,7 @@
                     sector,
                     tile;
                 
-                if (!map.data || !map.data[sector_x] || !map.data[sector_x][sector_y]) {
+                if (!map.data[sector_x] || !map.data[sector_x][sector_y]) {
                     callback(true);
                     return;
                 }
@@ -290,6 +290,8 @@
             {
                 var draw_loop,
                     map = editor.world_map[which],
+                    map_size_x,
+                    map_size_y,
                     starting_sector_x,
                     starting_sector_y,
                     
@@ -312,7 +314,10 @@
                 starting_sector_x = (starting_pos.x - (starting_pos.x % 640)) / 640;
                 starting_sector_y = (starting_pos.y - (starting_pos.y % 640)) / 640;
                 
-                total_sectors = map.data.length * map.data[0].length;
+                map_size_x = map.data.length;
+                map_size_y = map.data[0].length;
+                
+                total_sectors = map_size_x * map_size_y;
                 
                 draw_loop = (function ()
                 {
@@ -333,7 +338,13 @@
                                 callback();
                             }
                         };
-                        loop(-distance);
+                        /// Is this row on the map?
+                        if (starting_sector_y >= distance) {
+                            loop(-distance);
+                        } else {
+                            /// If not, don't bother trying to draw it.
+                            callback();
+                        }
                     }
                     
                     function draw_right(distance, callback)
@@ -353,7 +364,14 @@
                                 callback();
                             }
                         };
-                        loop(distance);
+                        
+                        /// Is this column on the map?
+                        if (starting_sector_x + distance < map_size_x) {
+                            loop(distance);
+                        } else {
+                            /// If not, don't bother trying to draw it.
+                            callback();
+                        }
                     }
                     
                     function draw_bottom(distance, callback)
@@ -373,7 +391,14 @@
                                 callback();
                             }
                         };
-                        loop(-distance);
+                        
+                        /// Is this row on the map?
+                        if (starting_sector_y + distance < map_size_y) {
+                            loop(-distance);
+                        } else {
+                            /// If not, don't bother trying to draw it.
+                            callback();
+                        }
                     }
                     
                     function draw_left(distance, callback)
@@ -393,7 +418,15 @@
                                 callback();
                             }
                         };
-                        loop(-distance + 1);
+                        
+                        /// Is this column on the map?
+                        if (starting_sector_x >= distance) {
+                            ///NOTE: The +1 is to skip the top left sector because it was already drawn by draw_top().
+                            loop(-distance + 1);
+                        } else {
+                            /// If not, don't bother trying to draw it.
+                            callback();
+                        }
                     }
                     
                     return function (distance)
