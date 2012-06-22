@@ -252,7 +252,9 @@
         
         editor.draw_map = (function ()
         {
-            function draw_sector(map, sector_x, sector_y)
+            var que = [];
+            
+            function draw_sector(map, sector_x, sector_y, callback)
             {
                 var base_tile,
                     i,
@@ -260,21 +262,12 @@
                     tile;
                 
                 if (!map.data || !map.data[sector_x] || !map.data[sector_x][sector_y]) {
+                    callback(true);
                     return;
                 }
                 
                 sector = map.data[sector_x][sector_y];
                 
-                for (i = sector.length - 1; i >= 0; i -= 1) {
-                    tile = sector[i];
-                    base_tile = editor.tiles[map.assets[tile.a]][tile.t];
-                    
-                    map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
-                }
-            }
-            
-            return function (which, starting_pos)
-            {
                 /// Structure:
                 /// map.data[sector_x][sector_y][tiles]
                 /// The tiles object:
@@ -284,11 +277,32 @@
                 ///     x: x
                 ///     y: y
                 
-                var map = editor.world_map[which],
+                for (i = sector.length - 1; i >= 0; i -= 1) {
+                    tile = sector[i];
+                    base_tile = editor.tiles[map.assets[tile.a]][tile.t];
+                    
+                    map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
+                }
+                callback(true);
+            }
+            
+            return function (which, starting_pos)
+            {
+                var draw_loop,
+                    map = editor.world_map[which],
                     starting_sector_x,
-                    starting_sector_y;
-                //console.log(JSON.stringify(map.data));
+                    starting_sector_y,
+                    
+                    sectors_drawn = 0,
+                    total_sectors;
+                
+                /// Is there no map data?
+                if (!map.data) {
+                    return false;
+                }
+                
                 if (!starting_pos) {
+                    /// Get the middle of the screen.
                     starting_pos = {
                         x: editor.camera.x + (window.innerWidth  / 2),
                         y: editor.camera.y + (window.innerHeight / 2)
@@ -298,7 +312,113 @@
                 starting_sector_x = (starting_pos.x - (starting_pos.x % 640)) / 640;
                 starting_sector_y = (starting_pos.y - (starting_pos.y % 640)) / 640;
                 
-                draw_sector(map, starting_sector_x, starting_sector_y);
+                total_sectors = map.data.length * map.data[0].length;
+                
+                draw_loop = (function ()
+                {
+                    function draw_top(width, callback)
+                    {
+                        function loop(i)
+                        {
+                            console.log("top", width);
+                            if (i <= width) {
+                                draw_sector(map, starting_sector_x + i, starting_sector_y - width, function (success)
+                                {
+                                    if (success) {
+                                        sectors_drawn += 1;
+                                    }
+                                    loop(i + 1);
+                                });
+                            } else {
+                                callback();
+                            }
+                        };
+                        loop(-width);
+                    }
+                    
+                    function draw_right(width, callback)
+                    {
+                        console.log("right", width);
+                        function loop(i)
+                        {
+                            if (i > -width) {
+                                draw_sector(map, starting_sector_x + width, starting_sector_y + i, function (success)
+                                {
+                                    if (success) {
+                                        sectors_drawn += 1;
+                                    }
+                                    loop(i - 1);
+                                });
+                            } else {
+                                callback();
+                            }
+                        };
+                        loop(width);
+                    }
+                    
+                    function draw_bottom(width, callback)
+                    {
+                        function loop(i)
+                        {
+                            console.log("bottom", width);
+                            if (i < width) {
+                                draw_sector(map, starting_sector_x + i, starting_sector_y + width, function (success)
+                                {
+                                    if (success) {
+                                        sectors_drawn += 1;
+                                    }
+                                    loop(i + 1);
+                                });
+                            } else {
+                                callback();
+                            }
+                        };
+                        loop(-width);
+                    }
+                    
+                    function draw_left(width, callback)
+                    {
+                        function loop(i)
+                        {
+                            console.log("left", width);
+                            if (i < width) {
+                                draw_sector(map, starting_sector_x - width, starting_sector_y + i, function (success)
+                                {
+                                    if (success) {
+                                        sectors_drawn += 1;
+                                    }
+                                    loop(i + 1);
+                                });
+                            } else {
+                                callback();
+                            }
+                        };
+                        loop(-width + 1);
+                    }
+                    
+                    return function (width)
+                    {
+                        //debugger;
+                        draw_top(width, function ()
+                        {
+                            draw_right(width, function ()
+                            {
+                                draw_bottom(width, function ()
+                                {
+                                    draw_left(width, function ()
+                                    {
+                                        if (sectors_drawn < total_sectors) {
+                                            draw_loop(width + 1);
+                                        }
+                                    });
+                                });
+                            })
+                        });
+                    };
+                }());
+                
+                //draw_sector(map, starting_sector_x, starting_sector_y);
+                draw_loop(0);
             };
         }());
         
