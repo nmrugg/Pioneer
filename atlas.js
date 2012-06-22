@@ -316,13 +316,13 @@
                 
                 draw_loop = (function ()
                 {
-                    function draw_top(width, callback)
+                    function draw_top(distance, callback)
                     {
                         function loop(i)
                         {
-                            console.log("top", width);
-                            if (i <= width) {
-                                draw_sector(map, starting_sector_x + i, starting_sector_y - width, function (success)
+                            console.log("top", distance);
+                            if (i <= distance) {
+                                draw_sector(map, starting_sector_x + i, starting_sector_y - distance, function (success)
                                 {
                                     if (success) {
                                         sectors_drawn += 1;
@@ -333,16 +333,16 @@
                                 callback();
                             }
                         };
-                        loop(-width);
+                        loop(-distance);
                     }
                     
-                    function draw_right(width, callback)
+                    function draw_right(distance, callback)
                     {
-                        console.log("right", width);
+                        console.log("right", distance);
                         function loop(i)
                         {
-                            if (i > -width) {
-                                draw_sector(map, starting_sector_x + width, starting_sector_y + i, function (success)
+                            if (i > -distance) {
+                                draw_sector(map, starting_sector_x + distance, starting_sector_y + i, function (success)
                                 {
                                     if (success) {
                                         sectors_drawn += 1;
@@ -353,16 +353,16 @@
                                 callback();
                             }
                         };
-                        loop(width);
+                        loop(distance);
                     }
                     
-                    function draw_bottom(width, callback)
+                    function draw_bottom(distance, callback)
                     {
                         function loop(i)
                         {
-                            console.log("bottom", width);
-                            if (i < width) {
-                                draw_sector(map, starting_sector_x + i, starting_sector_y + width, function (success)
+                            console.log("bottom", distance);
+                            if (i < distance) {
+                                draw_sector(map, starting_sector_x + i, starting_sector_y + distance, function (success)
                                 {
                                     if (success) {
                                         sectors_drawn += 1;
@@ -373,16 +373,16 @@
                                 callback();
                             }
                         };
-                        loop(-width);
+                        loop(-distance);
                     }
                     
-                    function draw_left(width, callback)
+                    function draw_left(distance, callback)
                     {
                         function loop(i)
                         {
-                            console.log("left", width);
-                            if (i < width) {
-                                draw_sector(map, starting_sector_x - width, starting_sector_y + i, function (success)
+                            console.log("left", distance);
+                            if (i < distance) {
+                                draw_sector(map, starting_sector_x - distance, starting_sector_y + i, function (success)
                                 {
                                     if (success) {
                                         sectors_drawn += 1;
@@ -393,22 +393,21 @@
                                 callback();
                             }
                         };
-                        loop(-width + 1);
+                        loop(-distance + 1);
                     }
                     
-                    return function (width)
+                    return function (distance)
                     {
-                        //debugger;
-                        draw_top(width, function ()
+                        draw_top(distance, function ()
                         {
-                            draw_right(width, function ()
+                            draw_right(distance, function ()
                             {
-                                draw_bottom(width, function ()
+                                draw_bottom(distance, function ()
                                 {
-                                    draw_left(width, function ()
+                                    draw_left(distance, function ()
                                     {
                                         if (sectors_drawn < total_sectors) {
-                                            draw_loop(width + 1);
+                                            draw_loop(distance + 1);
                                         }
                                     });
                                 });
