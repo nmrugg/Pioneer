@@ -318,6 +318,7 @@
                 map_size_y = map.data[0].length;
                 
                 total_sectors = map_size_x * map_size_y;
+                console.log("Size: ", map_size_x, map_size_y);
                 
                 draw_loop = (function ()
                 {
@@ -327,6 +328,7 @@
                         {
                             console.log("top", distance);
                             if (i <= distance) {
+                                console.log(starting_sector_x + i, starting_sector_y - distance);
                                 draw_sector(map, starting_sector_x + i, starting_sector_y - distance, function (success)
                                 {
                                     if (success) {
@@ -353,6 +355,7 @@
                         function loop(i)
                         {
                             if (i > -distance) {
+                                console.log(starting_sector_x + distance, starting_sector_y + i);
                                 draw_sector(map, starting_sector_x + distance, starting_sector_y + i, function (success)
                                 {
                                     if (success) {
@@ -380,6 +383,7 @@
                         {
                             console.log("bottom", distance);
                             if (i < distance) {
+                                console.log(starting_sector_x + i, starting_sector_y + distance);
                                 draw_sector(map, starting_sector_x + i, starting_sector_y + distance, function (success)
                                 {
                                     if (success) {
@@ -407,6 +411,7 @@
                         {
                             console.log("left", distance);
                             if (i < distance) {
+                                console.log(starting_sector_x - distance, starting_sector_y + i);
                                 draw_sector(map, starting_sector_x - distance, starting_sector_y + i, function (success)
                                 {
                                     if (success) {
