@@ -499,60 +499,73 @@
             {
                 var new_size = editor.parse_dimension(value);
                 
-                if (editor.cur_map.size && new_size.x === editor.cur_map.size.x && new_size.y === editor.cur_map.size.y) {
-                    /// Don't bother updating if nothing changed.
-                    return;
-                }
-                
-                editor.cur_map.size = editor.parse_dimension(value);
                 /**
-                 * Resize map canvases and map sectors.
-                 */
-                editor.cur_map.canvases.forEach(function (canvas)
-                {
-                    canvas.el.setAttribute("width",  editor.cur_map.size.x);
-                    canvas.el.setAttribute("height", editor.cur_map.size.y);
-                });
-                
-                /**
-                 * Load/create the map data.
+                 * Setup the map array.
                  *
-                 * @note This is delayed to give the browser a little break.
+                 * @note This is delayed so that as the user types, it is not updated instantly.
                  */
                 window.setTimeout(function ()
                 {
-                    var i,
-                        x,
-                        x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % 640)) / 640,
-                        y,
-                        y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 640)) / 640;
-                    
-                    if (!editor.cur_map.data) {
-                        ///TODO: It could also create a JSON string and then stringify it.
-                        editor.cur_map.data = [];
+                    if (editor.cur_map.size && new_size.x === editor.cur_map.size.x && new_size.y === editor.cur_map.size.y) {
+                        /// Don't bother updating if nothing changed.
+                        return;
                     }
                     
-                    ///TODO: Check and warn about deleting data.
-                    for (x = 0; x < x_sectors; x += 1) {
-                        if (!editor.cur_map.data[x]) {
-                            editor.cur_map.data[x] = [];
+                    editor.cur_map.size = editor.parse_dimension(value);
+                    /**
+                    * Resize map canvases and map sectors.
+                    */
+                    editor.cur_map.canvases.forEach(function (canvas)
+                    {
+                        canvas.el.setAttribute("width",  editor.cur_map.size.x);
+                        canvas.el.setAttribute("height", editor.cur_map.size.y);
+                    });
+                    
+                    /**
+                     * Load/create the map data.
+                     */
+                    (function ()
+                    {
+                        var i,
+                            x,
+                            x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % 640)) / 640,
+                            y,
+                            y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 640)) / 640;
+                        
+                        /// Prevent 
+                        if (x_sectors < 1) {
+                            x_sectors = 1;
                         }
-                        for (y = 0; y < y_sectors; y += 1) {
-                            if (!editor.cur_map.data[x][y]) {
-                                editor.cur_map.data[x][y] = [];
+                        if (y_sectors < 1) {
+                            y_sectors = 1;
+                        }
+                        
+                        if (!editor.cur_map.data) {
+                            ///TODO: It could also create a JSON string and then stringify it.
+                            editor.cur_map.data = [];
+                        }
+                        
+                        ///TODO: Check and warn about deleting data.
+                        for (x = 0; x < x_sectors; x += 1) {
+                            if (!editor.cur_map.data[x]) {
+                                editor.cur_map.data[x] = [];
+                            }
+                            for (y = 0; y < y_sectors; y += 1) {
+                                if (!editor.cur_map.data[x][y]) {
+                                    editor.cur_map.data[x][y] = [];
+                                }
+                            }
+                            if (editor.cur_map.data[x].length > y_sectors) {
+                                editor.cur_map.data[x] = editor.cur_map.data[x].slice(0, y_sectors);
                             }
                         }
-                        if (editor.cur_map.data[x].length > y_sectors) {
-                            editor.cur_map.data[x] = editor.cur_map.data[x].slice(0, y_sectors);
+                        if (editor.cur_map.data.length > x_sectors) {
+                            editor.cur_map.data = editor.cur_map.data.slice(0, x_sectors);
                         }
-                    }
-                    if (editor.cur_map.data.length > x_sectors) {
-                        editor.cur_map.data = editor.cur_map.data.slice(0, x_sectors);
-                    }
-                    
-                }, 100);
-                //console.log(editor.cur_map.data)
-                editor.draw_map(editor.world_map_num);
+                        
+                        editor.draw_map(editor.world_map_num);
+                    }());
+                }, 750);
             });
             
             tabs[0].appendChild(document.createTextNode("Snap: "));
