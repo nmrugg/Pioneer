@@ -250,28 +250,57 @@
         
         document.body.appendChild(editor.cur_map.container);
         
-        editor.draw_map = function (which)
+        editor.draw_map = (function ()
         {
-            /// Structure:
-            /// map.data[sector_x][sector_y][tiles]
-            /// The final "tiles" object:
-            ///     x         (number) The X pos on the map
-            ///     y         (number) The Y pos on the map
-            ///     tilesheet (number) Which tilesheet to use
-            ///     tile_id   (number) Which tile to use
-            
-            /*
-            editor.cur_map.data.forEach(function (sector_x)
+            function draw_sector(map, sector_x, sector_y)
             {
-                sector_x.forEach(sector_y) {
-                    sector_y.forEach(function (level)
-                    {
+                var base_tile,
+                    i,
+                    sector,
+                    tile;
+                
+                if (!map.data || !map.data[sector_x] || !map.data[sector_x][sector_y]) {
+                    return;
+                }
+                
+                sector = map.data[sector_x][sector_y];
+                
+                for (i = sector.length - 1; i >= 0; i -= 1) {
+                    tile = sector[i];
+                    base_tile = editor.tiles[map.assets[tile.a]][tile.t];
                     
-                    });
-                });
-            });
-            */
-        };
+                    map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
+                }
+            }
+            
+            return function (which, starting_pos)
+            {
+                /// Structure:
+                /// map.data[sector_x][sector_y][tiles]
+                /// The tiles object:
+                ///     a: asset_id
+                ///     l: level
+                ///     t: tile_id
+                ///     x: x
+                ///     y: y
+                
+                var map = editor.world_map[which],
+                    starting_sector_x,
+                    starting_sector_y;
+                //console.log(JSON.stringify(map.data));
+                if (!starting_pos) {
+                    starting_pos = {
+                        x: editor.camera.x + (window.innerWidth  / 2),
+                        y: editor.camera.y + (window.innerHeight / 2)
+                    };
+                }
+                
+                starting_sector_x = (starting_pos.x - (starting_pos.x % 640)) / 640;
+                starting_sector_y = (starting_pos.y - (starting_pos.y % 640)) / 640;
+                
+                draw_sector(map, starting_sector_x, starting_sector_y);
+            };
+        }());
         
         /**
          * Create World editor (tab 0)
@@ -330,6 +359,11 @@
                     canvas.el.setAttribute("height", editor.cur_map.size.y);
                 });
                 
+                /**
+                 * Load/create the map data.
+                 *
+                 * @note This is delayed to give the browser a little break.
+                 */
                 window.setTimeout(function ()
                 {
                     var i,
@@ -362,6 +396,7 @@
                     }
                     
                 }, 100);
+                //console.log(editor.cur_map.data)
                 editor.draw_map(editor.world_map_num);
             });
             
@@ -392,7 +427,7 @@
             
             editor.bind_input_box(level_box, "draw_on_canvas_level", "0", function (value)
             {
-                editor.draw_on_canvas_level = value;
+                editor.draw_on_canvas_level = Number(value);
             });
             
             tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
@@ -490,10 +525,10 @@
                     var tile_selected = false,
                         rect;
                     
-                    if (editor.tiles && editor.tiles[editor.selected_tilesheet.name]) {
+                    if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
                         /// Check to see if the mouse is hovering over an already created tile.
                         rect = get_selection_rec({x: mouse_event.clientX, y: mouse_event.clientY}, true);
-                        editor.tiles[editor.selected_tilesheet.name].every(function (tile, num)
+                        editor.tiles[editor.selected_tilesheet].every(function (tile, num)
                         {
                             if (rect.x >= tile.x && rect.x <= tile.x + tile.w && rect.y >= tile.y && rect.y <= tile.y + tile.h) {
                                 tile_selected = {
@@ -556,10 +591,9 @@
                     
                     if (tile_selected) {
                         editor.selected_tile = {
-                            tile:     tile_selected.tile,
-                            tile_num: tile_selected.num,
-                            tilesheet:     editor.selected_tilesheet.name,
-                            tilesheet_num: editor.selected_tilesheet.num
+                            tile:      tile_selected.tile,
+                            tile_num:  tile_selected.num,
+                            tilesheet: editor.selected_tilesheet
                         };
                         editor.change_tool("draw");
                     }
@@ -575,10 +609,9 @@
                     /// Did the user click on an already designated tile?
                     if (tile_selected) {
                         editor.selected_tile = {
-                            tile:     tile_selected.tile,
-                            tile_num: tile_selected.num,
-                            tilesheet:     editor.selected_tilesheet.name,
-                            tilesheet_num: editor.selected_tilesheet.num
+                            tile:      tile_selected.tile,
+                            tile_num:  tile_selected.num,
+                            tilesheet: editor.selected_tilesheet
                         };
                         editor.change_tool("draw");
                     } else {
@@ -702,10 +735,10 @@
                         tilesheet_canvas_cx.drawImage(img, 0, 0);
                         
                         /// Does this tilesheet have any already designated tiles in it?
-                        if (editor.tiles && editor.tiles[editor.selected_tilesheet.name]) {
+                        if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
                             tilesheet_canvas_cx.fillStyle = "rgba(0,0,0,.3)";
                             /// Now, draw a dark rectangle for each tile that is already made.
-                            editor.tiles[editor.selected_tilesheet.name].forEach(function (tile)
+                            editor.tiles[editor.selected_tilesheet].forEach(function (tile)
                             {
                                 tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
                             });
@@ -719,8 +752,6 @@
                     
                     return function (which)
                     {
-                        var num;
-                        
                         if (which !== last_item) {
                             last_item = which;
                             img.onload = function ()
@@ -730,19 +761,7 @@
                                 editor.draw_tilesheet();
                             };
                             
-                            editor.assets.names.every(function (asset, i)
-                            {
-                                if (which === asset) {
-                                    num = i;
-                                    return false; /// I.e., break.
-                                }
-                                return true;
-                            });
-                            
-                            editor.selected_tilesheet = {
-                                name: which,
-                                num:  num
-                            };
+                            editor.selected_tilesheet = which;
                             
                             img.src = "/assets/" + which;
                         }
@@ -777,8 +796,7 @@
                         
                         /// Store in the editor object so that other functions can get access to it.
                         editor.assets = {
-                            images: [],
-                            names:  assets
+                            images: {}
                         };
                         
                         tilesheet_select.options.length = 0;
@@ -788,8 +806,8 @@
                             ///NOTE: new Option(text, value, default_selected, selected);
                             tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, (asset === selected_tilesheet));
                             ///TODO: Load these before anything else with a progress bar.
-                            editor.assets.images[i] = document.createElement("img");
-                            editor.assets.images[i].src = "/assets/" + asset;
+                            editor.assets.images[asset] = document.createElement("img");
+                            editor.assets.images[asset].src = "/assets/" + asset;
                         });
                         
                         load_tilesheet(tilesheet_select.value);
@@ -1100,7 +1118,8 @@
                                 
                                 /// Since nothing can over lap on the same level, clear the space first.
                                 editor.cur_map.canvases[level].cx.clearRect(pos.x, pos.y, tile.w, tile.h);
-                                editor.cur_map.canvases[level].cx.drawImage(editor.assets.images[editor.selected_tile.tilesheet_num], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
+                                //debugger;
+                                editor.cur_map.canvases[level].cx.drawImage(editor.assets.images[editor.selected_tilesheet], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
                             }
                         };
                         
@@ -1129,8 +1148,8 @@
                         editor.tool = "draW";
                     };
                     
-                    tile_cursor.setAttribute("width",   editor.selected_tile.tile.w);
-                    tile_cursor.setAttribute("height",  editor.selected_tile.tile.h);
+                    tile_cursor.setAttribute("width",  editor.selected_tile.tile.w);
+                    tile_cursor.setAttribute("height", editor.selected_tile.tile.h);
                     
                     tile_img.src = "/assets/" + editor.selected_tile.tilesheet;
                 };
@@ -1154,6 +1173,6 @@
     
     document.addEventListener("DOMContentLoaded", function ()
     {
-        window.setTimeout(start, 0);
+        window.setTimeout(start, 100);
     }, false);
 }());
