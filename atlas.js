@@ -262,28 +262,36 @@
                     tile;
                 
                 if (!map.data[sector_x] || !map.data[sector_x][sector_y]) {
-                    callback(true);
+                    callback(false);
                     return;
                 }
                 
                 sector = map.data[sector_x][sector_y];
                 
-                /// Structure:
-                /// map.data[sector_x][sector_y][tiles]
-                /// The tiles object:
-                ///     a: asset_id
-                ///     l: level
-                ///     t: tile_id
-                ///     x: x
-                ///     y: y
-                
-                for (i = sector.length - 1; i >= 0; i -= 1) {
-                    tile = sector[i];
-                    base_tile = editor.tiles[map.assets[tile.a]][tile.t];
-                    
-                    map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
+                if (sector.length === 0) {
+                    callback(true);
+                    return;
                 }
-                callback(true);
+                
+                //window.setTimeout(function ()
+                //{
+                    /// Structure:
+                    /// map.data[sector_x][sector_y][tiles]
+                    /// The tiles object:
+                    ///     a: asset_id
+                    ///     l: level
+                    ///     t: tile_id
+                    ///     x: x
+                    ///     y: y
+                    
+                    for (i = sector.length - 1; i >= 0; i -= 1) {
+                        tile = sector[i];
+                        base_tile = editor.tiles[map.assets[tile.a]][tile.t];
+                        
+                        map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
+                    }
+                    callback(true);
+                //}, 100);
             }
             
             return function (which, starting_pos)
@@ -318,7 +326,6 @@
                 map_size_y = map.data[0].length;
                 
                 total_sectors = map_size_x * map_size_y;
-                console.log("Size: ", map_size_x, map_size_y);
                 
                 draw_loop = (function ()
                 {
@@ -326,12 +333,11 @@
                     {
                         function loop(i)
                         {
-                            console.log("top", distance);
                             if (i <= distance) {
-                                console.log(starting_sector_x + i, starting_sector_y - distance);
                                 draw_sector(map, starting_sector_x + i, starting_sector_y - distance, function (success)
                                 {
                                     if (success) {
+                                        console.log(starting_sector_x + i, starting_sector_y - distance);
                                         sectors_drawn += 1;
                                     }
                                     loop(i + 1);
@@ -341,6 +347,7 @@
                             }
                         };
                         /// Is this row on the map?
+                        console.log("top ", starting_sector_y,  distance, starting_sector_y >= distance);
                         if (starting_sector_y >= distance) {
                             loop(-distance);
                         } else {
@@ -351,14 +358,13 @@
                     
                     function draw_right(distance, callback)
                     {
-                        console.log("right", distance);
                         function loop(i)
                         {
                             if (i > -distance) {
-                                console.log(starting_sector_x + distance, starting_sector_y + i);
                                 draw_sector(map, starting_sector_x + distance, starting_sector_y + i, function (success)
                                 {
                                     if (success) {
+                                        console.log(starting_sector_x + distance, starting_sector_y + i);
                                         sectors_drawn += 1;
                                     }
                                     loop(i - 1);
@@ -369,6 +375,7 @@
                         };
                         
                         /// Is this column on the map?
+                        console.log("right ", starting_sector_x + distance , map_size_x, starting_sector_x + distance < map_size_x);
                         if (starting_sector_x + distance < map_size_x) {
                             loop(distance);
                         } else {
@@ -381,12 +388,11 @@
                     {
                         function loop(i)
                         {
-                            console.log("bottom", distance);
                             if (i < distance) {
-                                console.log(starting_sector_x + i, starting_sector_y + distance);
                                 draw_sector(map, starting_sector_x + i, starting_sector_y + distance, function (success)
                                 {
                                     if (success) {
+                                        console.log(starting_sector_x + i, starting_sector_y + distance);
                                         sectors_drawn += 1;
                                     }
                                     loop(i + 1);
@@ -397,6 +403,7 @@
                         };
                         
                         /// Is this row on the map?
+                        console.log("bottom ", starting_sector_y + distance , map_size_y, starting_sector_y + distance < map_size_y);
                         if (starting_sector_y + distance < map_size_y) {
                             loop(-distance);
                         } else {
@@ -409,12 +416,11 @@
                     {
                         function loop(i)
                         {
-                            console.log("left", distance);
                             if (i < distance) {
-                                console.log(starting_sector_x - distance, starting_sector_y + i);
                                 draw_sector(map, starting_sector_x - distance, starting_sector_y + i, function (success)
                                 {
                                     if (success) {
+                                        console.log(starting_sector_x - distance, starting_sector_y + i);
                                         sectors_drawn += 1;
                                     }
                                     loop(i + 1);
@@ -425,6 +431,7 @@
                         };
                         
                         /// Is this column on the map?
+                        console.log("left ", starting_sector_x , distance, starting_sector_x >= distance);
                         if (starting_sector_x >= distance) {
                             ///NOTE: The +1 is to skip the top left sector because it was already drawn by draw_top().
                             loop(-distance + 1);
@@ -444,8 +451,11 @@
                                 {
                                     draw_left(distance, function ()
                                     {
+                                        console.log("total: ", sectors_drawn,  total_sectors);
                                         if (sectors_drawn < total_sectors) {
+                                            //window.setTimeout(function (){
                                             draw_loop(distance + 1);
+                                            //}, 100);
                                         }
                                     });
                                 });
@@ -454,7 +464,6 @@
                     };
                 }());
                 
-                //draw_sector(map, starting_sector_x, starting_sector_y);
                 draw_loop(0);
             };
         }());
