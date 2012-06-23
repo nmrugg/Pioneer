@@ -780,6 +780,25 @@
                 up_el.value   = "Move Up ▲";
                 down_el.value = "Move Down ▼";
                 
+                up_el.onclick = function ()
+                {
+                    var where = Number(select_el.value);
+                    
+                    if (where < editor.cur_map.canvases.length - 1) {
+                        editor.for_each_tile(function (tile)
+                        {
+                            if (tile.l === where) {
+                                tile.l += 1;
+                            } else if (tile.l === where + 1) {
+                                tile.l -= 1;
+                            }
+                        });
+                        
+                        create_select_options(where + 1);
+                        editor.draw_map();
+                    }
+                };
+                
                 down_el.onclick = function ()
                 {
                     var where = Number(select_el.value);
