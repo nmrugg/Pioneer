@@ -133,7 +133,7 @@
                 }());
                 
                 tabs[tabs.length] = create_tab("World",      tab_container, ul);
-                tabs[tabs.length] = create_tab("Tilesheets", tab_container, ul);
+                tabs[tabs.length] = create_tab("Draw",       tab_container, ul);
                 tabs[tabs.length] = create_tab("Animations", tab_container, ul);
                 
                 editor.el.appendChild(tab_container);
@@ -763,6 +763,7 @@
                     }
                 };
                 
+                /// Allow users to click and drag a tile
                 tilesheet_canvas.onmousedown = function (e)
                 {
                     var tile_selected = get_hover_tile(e);
@@ -774,8 +775,14 @@
                             tilesheet: editor.selected_tilesheet
                         };
                         editor.change_tool("draw");
+                        editor.dragging_tilesheet = true;
                     }
                     ///TODO: Let the user draw a selection rectangle.
+                };
+                /// NEEDED?
+                tilesheet_canvas.onmouseup = function (e)
+                {
+                    editor.dragging_tilesheet = false;
                 };
                 
                 tilesheet_canvas.onclick = function (e)
@@ -1149,7 +1156,7 @@
                             ///NOTE: \u00d7 is the &times; symbols (i.e., mathmatical times).
                             document.title = pos.x + " \u00d7 " + pos.y + " - " + editor.game_name;
                             
-                            if (e.buttons === 1) {
+                            if (e.buttons === 1 && !editor.dragging_tilesheet) {
                                 onup(e);
                             }
                         };
@@ -1178,6 +1185,8 @@
                                 /// Only accept left clicks.
                                 return;
                             }
+                            
+                            editor.dragging_tilesheet = false;
                             
                             /// For some reason, Firefox occationally throws this error: "Error: Permission denied to access property 'className'",
                             /// so put it in a try/catch.
