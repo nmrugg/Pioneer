@@ -753,7 +753,16 @@
                     /// Add the new canvas to the DOM.
                     editor.cur_map.container.insertBefore(new_canvas.el, editor.cur_map.canvases[where] ? editor.cur_map.canvases[where].el : null);
                     
+                    /// Insert the new canvas into the canvas array.
                     editor.cur_map.canvases.splice(where, 0, new_canvas);
+                    
+                    editor.for_each_tile(function (tile)
+                    {
+                        if (tile.l >= where) {
+                            tile.l += 1;
+                        }
+                    });
+                    
                     create_select_options(where);
                 };
                 
