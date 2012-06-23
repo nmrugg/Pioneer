@@ -24,12 +24,123 @@
         
         editor.game_name = "Pioneer";
         
+        /// Create the event handler.
+        editor.event = (function ()
+        {
+            var func_list = {};
+            
+            return {
+                attach: function (name, func, once)
+                {
+                    var arr_len,
+                        i;
+                    
+                    /// Should the function be attached to multiple events?
+                    if (name instanceof Array) {
+                        arr_len = name.length;
+                        for (i = 0; i < arr_len; i += 1) {
+                            /// If "once" is an array, then use the elements of the array.
+                            /// If "once" is not an array, then just send the "once" variable each time.
+                            this.attach(name[i], func, once instanceof Array ? once[i] : once);
+                        }
+                    } else {
+                        if (typeof func === "function") {
+                            /// Has a function been previously attached to this event? If not, create a function to handle them.
+                            if (!func_list[name]) {
+                                func_list[name] = [];
+                            }
+                            func_list[name][func_list[name].length] = {
+                                func: func,
+                                once: once
+                            };
+                        }
+                    }
+                },
+                detach: function (name, func, once)
+                {
+                    var i;
+                    
+                    if (func_list[name]) {
+                        for (i = func_list[name].length - 1; i >= 0; i -= 1) {
+                            ///NOTE: Both func and once must match.
+                            if (func_list[name][i].func === func && func_list[name][i].once === once) {
+                                func_list[name].remove(i);
+                                /// Since only one event should be removed at a time, we can end now.
+                                return;
+                            }
+                        }
+                    }
+                },
+                trigger: function (name, e)
+                {
+                    var func_arr_len,
+                        i,
+                        stop_propagation;
+                    
+                    /// Does this event have any functions attached to it?
+                    if (func_list[name]) {
+                        func_arr_len = func_list[name].length;
+                        
+                        if (!BF.is_object(e)) {
+                            /// If the event object was not specificed, it needs to be created in order to attach stopPropagation() to it.
+                            e = {};
+                        }
+                        
+                        ///NOTE: If an attached function runs this function, it will stop calling other functions.
+                        e.stopPropagation = function ()
+                        {
+                            stop_propagation = true;
+                        };
+                        
+                        for (i = 0; i < func_arr_len; i += 1) {
+                            func_list[name][i].func(e);
+                            
+                            /// Is this function only supposed to be executed once?
+                            if (func_list[name][i].once) {
+                                func_list[name].remove(i);
+                            }
+                            
+                            /// Was e.stopPropagation() called?
+                            if (stop_propagation) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            };
+        }());
+        
+        editor.for_each_tile = function (callback, which)
+        {
+            var i,
+                len,
+                map = editor.world_map[which] || editor.world_map[editor.world_map_num],
+                sector,
+                x,
+                x_len = map.data.length,
+                y,
+                y_len = map.data[0].length;
+            
+            for (x = 0; x < x_len; x += 1) {
+                for (y = 0; y < y_len; y += 1) {
+                    sector = map.data[x][y];
+                    len = sector.length;
+                    for (i = 0; i < len; i += 1) {
+                        callback(sector[i]);
+                    }
+                }
+            }
+        };
+        
         editor.el = document.createElement("div");
         
         editor.el.className = "editor";
         
         document.body.appendChild(editor.el);
         
+        /**
+         * Create editor side panel.
+         */
         (function ()
         {
             var pos = window.localStorage.getItem("editor_pos");
@@ -304,10 +415,10 @@
                 }
             }
             
-            return function (which, starting_pos)
+            return function draw_map(which, starting_pos)
             {
                 var draw_loop,
-                    map = editor.world_map[which],
+                    map = editor.world_map[which] || editor.world_map[editor.world_map_num],
                     map_size_x,
                     map_size_y,
                     starting_sector_x,
@@ -320,6 +431,12 @@
                 if (!map.data) {
                     return false;
                 }
+                
+                /// Make sure all of the canvases are blank.
+                map.canvases.forEach(function (canvas)
+                {
+                    canvas.cx.clearRect(0, 0, canvas.el.width, canvas.el.height);
+                });
                 
                 if (!starting_pos) {
                     /// Get the middle of the screen.
@@ -472,7 +589,8 @@
          */
         (function ()
         {
-            var map_box   = document.createElement("input"),
+            var create_level_options,
+                map_box   = document.createElement("input"),
                 map_size_box = document.createElement("input"),
                 name_box  = document.createElement("input"), /// The name of the game
                 snap_box  = document.createElement("input"),
@@ -573,10 +691,131 @@
                             editor.cur_map.data = editor.cur_map.data.slice(0, x_sectors);
                         }
                         
-                        editor.draw_map(editor.world_map_num);
+                        editor.draw_map();
                     }());
                 }, 750);
             });
+            
+            function create_level_options()
+            {
+                var add_el    = document.createElement("input"),
+                    change_el = document.createElement("input"),
+                    del_el    = document.createElement("input"),
+                    down_el   = document.createElement("input"),
+                    level_div = document.createElement("div"),
+                    up_el     = document.createElement("input"),
+                    select_el = document.createElement("select");
+                
+                function create_select_options(which)
+                {
+                    var i;
+                    
+                    select_el.options.length = 0;
+                    
+                    if (typeof which === "undefined") {
+                        which = editor.draw_on_canvas_level;
+                    }
+                    
+                    for (i = editor.cur_map.canvases.length - 1; i >= 0; i -= 1) {
+                        ///NOTE: new Option(text, value, default_selected, selected);
+                        select_el.options[select_el.options.length] = new Option(i + " " + editor.cur_map.canvases[i].type, i, false, (i === which));
+                    };
+                }
+                
+                editor.event.attach("change_map", function ()
+                {
+                    create_select_options();
+                });
+                
+                /// The delay is to let the editor.draw_on_canvas_level load.
+                window.setTimeout(create_select_options, 100);
+                
+                add_el.type = "button";
+                del_el.type = "button";
+                
+                add_el.value = "Insert Layer";
+                del_el.value = "Remove Layer";
+                
+                add_el.onclick = function ()
+                {
+                    var new_canvas,
+                        where = Number(select_el.value) + 1;
+                    
+                    new_canvas = {
+                        el:   document.createElement("canvas"),
+                        type: editor.cur_map.canvases[where - 1] ? editor.cur_map.canvases[where - 1].type : "bg"
+                    };
+                    new_canvas.cx = new_canvas.el.getContext("2d");
+                    new_canvas.el.className = "map";
+                    
+                    new_canvas.el.setAttribute("width",  editor.cur_map.size.x);
+                    new_canvas.el.setAttribute("height", editor.cur_map.size.y);
+                    
+                    /// Add the new canvas to the DOM.
+                    editor.cur_map.container.insertBefore(new_canvas.el, editor.cur_map.canvases[where] ? editor.cur_map.canvases[where].el : null);
+                    
+                    editor.cur_map.canvases.splice(where, 0, new_canvas);
+                    create_select_options(where);
+                };
+                
+                del_el.onclick = function ()
+                {
+                    var where = Number(select_el.value);
+                    
+                    editor.array_remove(editor.cur_map.canvases, where);
+                    create_select_options(where < editor.cur_map.canvases.length ? where : where - 1);
+                };
+                
+                up_el.type   = "button";
+                down_el.type = "button";
+                
+                up_el.value   = "Move Up ▲";
+                down_el.value = "Move Down ▼";
+                
+                down_el.onclick = function ()
+                {
+                    var where = Number(select_el.value);
+                    
+                    if (where > 0) {
+                        editor.for_each_tile(function (tile)
+                        {
+                            if (tile.l === where) {
+                                tile.l -= 1;
+                            } else if (tile.l === where - 1) {
+                                tile.l += 1;
+                            }
+                        });
+                        
+                        create_select_options(where - 1);
+                        editor.draw_map();
+                    }
+                };
+                
+                change_el.type  = "button";
+                change_el.value = "Change layer type";
+                
+                change_el.onclick = function ()
+                {
+                    var where = Number(select_el.value);
+                    
+                    editor.cur_map.canvases[where].type = (editor.cur_map.canvases[where].type === "bg" ? "fg" : "bg");
+                    create_select_options(where);
+                }
+                
+                level_div.appendChild(select_el);
+                level_div.appendChild(document.createElement("br"));
+                level_div.appendChild(add_el);
+                level_div.appendChild(document.createTextNode(" "));
+                level_div.appendChild(del_el);
+                level_div.appendChild(document.createElement("br"));
+                level_div.appendChild(up_el);
+                level_div.appendChild(document.createTextNode(" "));
+                level_div.appendChild(down_el);
+                level_div.appendChild(document.createElement("br"));
+                level_div.appendChild(change_el);
+                
+                return level_div;
+            }
             
             tabs[0].appendChild(document.createTextNode("Snap: "));
             tabs[0].appendChild(snap_box);
@@ -589,11 +828,12 @@
             tabs[0].appendChild(document.createElement("br"));
             tabs[0].appendChild(document.createTextNode("Map size: "));
             tabs[0].appendChild(map_size_box);
+            tabs[0].appendChild(create_level_options());
         }());
         
         /**
-        * Create tile editor (tab 1)
-        */
+         * Create Draw tab (tab 1)
+         */
         (function ()
         {
             var level_box = document.createElement("input"),
@@ -1156,6 +1396,7 @@
                             ///NOTE: \u00d7 is the &times; symbols (i.e., mathmatical times).
                             document.title = pos.x + " \u00d7 " + pos.y + " - " + editor.game_name;
                             
+                            /// Allow for drawing by holding down the button.
                             if (e.buttons === 1 && !editor.dragging_tilesheet) {
                                 onup(e);
                             }
@@ -1305,7 +1546,6 @@
                                 
                                 /// Since nothing can over lap on the same level, clear the space first.
                                 editor.cur_map.canvases[level].cx.clearRect(pos.x, pos.y, tile.w, tile.h);
-                                //debugger;
                                 editor.cur_map.canvases[level].cx.drawImage(editor.assets.images[editor.selected_tilesheet], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
                             }
                         };
