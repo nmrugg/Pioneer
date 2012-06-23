@@ -875,7 +875,9 @@
          */
         (function ()
         {
-            var level_select_el     = document.createElement("select"),
+            var hide_show_layers,
+                hide_show_checkbox  = document.createElement("input"),
+                level_select_el     = document.createElement("select"),
                 level_select_onchange,
                 tilesheet_canvas    = document.createElement("canvas"),
                 tilesheet_canvas_cx,
@@ -883,6 +885,26 @@
                 tilesheet_options   = document.createElement("div"),
                 tilesheet_select    = document.createElement("select");
             
+            /// Set up hide other layers checkbox.
+            hide_show_layers = function ()
+            {
+                var value = hide_show_checkbox.checked;
+                
+                editor.cur_map.canvases.forEach(function (canvas, i)
+                {
+                    if (!value || editor.draw_on_canvas_level === i) {
+                        canvas.el.style.visibility = "visible";
+                    } else {
+                        canvas.el.style.visibility = "hidden";
+                    }
+                });
+            };
+            
+            hide_show_checkbox.type = "checkbox";
+            
+            hide_show_checkbox.onchange = hide_show_layers;
+            
+            /// Set up the layer select box.
             editor.event.attach("update_map_layers", function ()
             {
                 var i;
@@ -893,6 +915,8 @@
                     ///NOTE: new Option(text, value, default_selected, selected);
                     level_select_el.options[level_select_el.options.length] = new Option(i + " " + editor.cur_map.canvases[i].type, i, false, (i === editor.draw_on_canvas_level));
                 };
+                
+                hide_show_layers();
             });
         
             level_select_onchange = function ()
@@ -901,15 +925,20 @@
                 
                 window.localStorage.setItem("draw_on_canvas_level", value);
                 editor.draw_on_canvas_level = Number(value);
+                
+                hide_show_layers();
             };
             
             level_select_el.onchange = level_select_onchange;
             level_select_el.onkeyup  = level_select_onchange;
             
+            /// Set the default drawing level.
             editor.draw_on_canvas_level = Number(window.localStorage.getItem("draw_on_canvas_level"));
+            /// If it is invalid, set it to 0.
             if (isNaN(editor.draw_on_canvas_level)) {
                 editor.draw_on_canvas_level = 0;
             }
+            
             
             tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
             
@@ -938,8 +967,11 @@
                 tabs[window.localStorage.getItem("cur_tab")].style.display = "block";
             }, 0);
             
-            tabs[1].appendChild(document.createTextNode("Drawing Level: "));
+            tabs[1].appendChild(document.createTextNode("Drawing Layer: "));
             tabs[1].appendChild(level_select_el);
+            tabs[1].appendChild(document.createElement("br"));
+            tabs[1].appendChild(document.createTextNode("Hide other layers: "));
+            tabs[1].appendChild(hide_show_checkbox);
             tabs[1].appendChild(document.createElement("br"));
             
             tabs[1].appendChild(tilesheet_select);
