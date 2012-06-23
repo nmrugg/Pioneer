@@ -110,22 +110,39 @@
             };
         }());
         
-        editor.for_each_tile = function (callback, which)
+        editor.for_each_tile_every_map = function (callback)
+        {
+            editor.world_map.forEach(function (map_id)
+            {
+                editor.for_each_tile(callback, map_id);
+            });
+        }
+        
+        editor.for_each_tile = function (callback, map_id)
         {
             var i,
-                map = editor.world_map[which] || editor.world_map[editor.world_map_num],
+                map,
                 sector,
                 x,
-                x_len = map.data.length,
+                x_len,
                 y,
-                y_len = map.data[0].length;
+                y_len;
+            
+            if (!editor.world_map[map_id]) {
+                map_id = editor.world_map_num;
+            }
+            
+            map = editor.world_map[map_id]
+            
+            x_len = map.data.length;
+            y_len = map.data[0].length;
             
             for (x = 0; x < x_len; x += 1) {
                 for (y = 0; y < y_len; y += 1) {
                     sector = map.data[x][y];
                     
                     for (i = sector.length - 1; i >= 0; i -= 1) {
-                        callback(sector[i], i, sector);
+                        callback(sector[i], i, sector, map_id);
                     }
                 }
             }
@@ -1172,6 +1189,17 @@
                                 ajax.addEventListener("load", function ()
                                 {
                                     editor.draw_tilesheet();
+                                    editor.for_each_tile_every_map(function (tile, i, sector, map_id)
+                                    {
+                                        if (editor.world_map[map_id].assets[tile.a] === editor.selected_tile.tilesheet) {
+                                            if (tile.t === editor.selected_tile.tile_num) {
+                                                editor.array_remove(sector, i);
+                                            } else if (tile.t > editor.selected_tile.tile_num){
+                                                tile.t -= 1;
+                                            }
+                                        }
+                                    });
+                                    editor.draw_map();
                                 });
                                 ajax.send();
                             }
