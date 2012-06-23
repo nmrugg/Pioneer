@@ -81,7 +81,7 @@
                     if (func_list[name]) {
                         func_arr_len = func_list[name].length;
                         
-                        if (!BF.is_object(e)) {
+                        if (!(e instanceof Object)) {
                             /// If the event object was not specificed, it needs to be created in order to attach stopPropagation() to it.
                             e = {};
                         }
@@ -719,6 +719,8 @@
                         ///NOTE: new Option(text, value, default_selected, selected);
                         select_el.options[select_el.options.length] = new Option(i + " " + editor.cur_map.canvases[i].type, i, false, (i === which));
                     };
+                    
+                    editor.event.trigger("update_map_layers");
                 }
                 
                 editor.event.attach("change_map", function ()
@@ -838,6 +840,7 @@
                     create_select_options(where);
                 }
                 
+                level_div.appendChild(document.createTextNode("Layer: "));
                 level_div.appendChild(select_el);
                 level_div.appendChild(document.createElement("br"));
                 level_div.appendChild(add_el);
@@ -872,17 +875,41 @@
          */
         (function ()
         {
-            var level_box = document.createElement("input"),
+            var level_select_el     = document.createElement("select"),
+                level_select_onchange,
                 tilesheet_canvas    = document.createElement("canvas"),
                 tilesheet_canvas_cx,
                 tilesheet_container = document.createElement("div"),
                 tilesheet_options   = document.createElement("div"),
                 tilesheet_select    = document.createElement("select");
             
-            editor.bind_input_box(level_box, "draw_on_canvas_level", "0", function (value)
+            editor.event.attach("update_map_layers", function ()
             {
-                editor.draw_on_canvas_level = Number(value);
+                var i;
+                
+                level_select_el.options.length = 0;
+                
+                for (i = editor.cur_map.canvases.length - 1; i >= 0; i -= 1) {
+                    ///NOTE: new Option(text, value, default_selected, selected);
+                    level_select_el.options[level_select_el.options.length] = new Option(i + " " + editor.cur_map.canvases[i].type, i, false, (i === editor.draw_on_canvas_level));
+                };
             });
+        
+            level_select_onchange = function ()
+            {
+                var value = Number(level_select_el.value);
+                
+                window.localStorage.setItem("draw_on_canvas_level", value);
+                editor.draw_on_canvas_level = Number(value);
+            };
+            
+            level_select_el.onchange = level_select_onchange;
+            level_select_el.onkeyup  = level_select_onchange;
+            
+            editor.draw_on_canvas_level = Number(window.localStorage.getItem("draw_on_canvas_level"));
+            if (isNaN(editor.draw_on_canvas_level)) {
+                editor.draw_on_canvas_level = 0;
+            }
             
             tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
             
@@ -912,7 +939,7 @@
             }, 0);
             
             tabs[1].appendChild(document.createTextNode("Drawing Level: "));
-            tabs[1].appendChild(level_box);
+            tabs[1].appendChild(level_select_el);
             tabs[1].appendChild(document.createElement("br"));
             
             tabs[1].appendChild(tilesheet_select);
