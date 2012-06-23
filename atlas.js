@@ -113,7 +113,6 @@
         editor.for_each_tile = function (callback, which)
         {
             var i,
-                len,
                 map = editor.world_map[which] || editor.world_map[editor.world_map_num],
                 sector,
                 x,
@@ -124,9 +123,9 @@
             for (x = 0; x < x_len; x += 1) {
                 for (y = 0; y < y_len; y += 1) {
                     sector = map.data[x][y];
-                    len = sector.length;
-                    for (i = 0; i < len; i += 1) {
-                        callback(sector[i]);
+                    
+                    for (i = sector.length - 1; i >= 0; i -= 1) {
+                        callback(sector[i], i, sector);
                     }
                 }
             }
@@ -762,8 +761,17 @@
                 {
                     var where = Number(select_el.value);
                     
+                    editor.cur_map.container.removeChild(editor.cur_map.canvases[where].el);
                     editor.array_remove(editor.cur_map.canvases, where);
                     create_select_options(where < editor.cur_map.canvases.length ? where : where - 1);
+                    editor.for_each_tile(function (tile, i, sector)
+                    {
+                        if (tile.l === where) {
+                            editor.array_remove(sector, i);
+                        } else if (tile.l > where) {
+                            tile.l -= 1;
+                        }
+                    });
                 };
                 
                 up_el.type   = "button";
