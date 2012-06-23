@@ -1157,6 +1157,28 @@
                     }
                 };
                 
+                window.addEventListener("keypress", function (e)
+                {
+                    var ajax;
+                    
+                    if (editor.tool === "draw") {
+                        if (e.keyCode === 46) { /// Delete
+                            if (confirm("Danger:\n\nDo you really want to delete this tile from the tilesheet? It will remove ALL of this specific tile from ALL of the maps.")) {
+                                editor.array_remove(editor.tiles[editor.selected_tile.tilesheet], editor.selected_tile.tile_num);
+                                editor.cancel_draw_mode({keyCode: 27});
+                                
+                                ajax = new window.XMLHttpRequest();
+                                ajax.open("GET", "/api?action=remove_tile&data=" + JSON.stringify({img: editor.selected_tile.tilesheet, tile: editor.selected_tile.tile_num}));
+                                ajax.addEventListener("load", function ()
+                                {
+                                    editor.draw_tilesheet();
+                                });
+                                ajax.send();
+                            }
+                        }
+                    }
+                }, false);
+                
                 /**
                  * Draw grid when hovering over the Auto Split button.
                  */
@@ -1667,7 +1689,7 @@
                         };
                         
                         window.addEventListener("keypress", editor.cancel_draw_mode, false);
-                        editor.tool = "draW";
+                        editor.tool = "draw";
                     };
                     
                     tile_cursor.setAttribute("width",  editor.selected_tile.tile.w);

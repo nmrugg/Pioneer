@@ -9,6 +9,15 @@ var formidable = require("formidable"),
     path = require("path"),
     qs   = require("querystring");
 
+/// Array Remove - By John Resig (MIT Licensed)
+/// http://ejohn.org/blog/javascript-array-remove/
+function array_remove(array, from, to)
+{
+    var rest = array.slice((to || from) + 1 || array.length);
+    array.length = from < 0 ? array.length + from : from;
+    return array.push.apply(array, rest);
+};
+
 function get_assets(response)
 {
     response.writeHead(200, {"Content-Type": "application/json"});
@@ -30,6 +39,39 @@ function get_tiles(response)
     });
 }
 
+function remove_tile(response, data)
+{
+    response.writeHead(200, {"Content-Type": "text/plain"});
+    fs.readFile("data/tiles.json", "utf8", function (err, cur_tiles)
+    {
+        var tiles = {},
+            tiles_str,
+            this_tile;
+        
+        if (cur_tiles) {
+            try {
+                tiles = JSON.parse(cur_tiles);
+            } catch (e) {}
+        }
+        
+        if (data && data.img && data.tile) {
+            if (tiles[data.img]) {
+                array_remove(tiles[data.img], data.tile);
+            }
+        }
+        
+        tiles_str = JSON.stringify(tiles);
+        
+        response.end();
+        
+        ///NOTE: To avoid race conditions, write this file synchronously.
+        fs.writeFileSync("data/tiles.json", tiles_str, "utf8");
+    });
+    
+    try {
+        data = JSON.parse(data);
+    } catch (e) {}
+}
 
 function add_tiles(response, data)
 {
@@ -123,6 +165,9 @@ require("http").createServer(function (request, response)
             return;
         case "get_tiles":
             get_tiles(response);
+            return;
+        case "remove_tile":
+            remove_tile(response, query.data);
             return;
         }
         /// If the action is not valid, simply end.
