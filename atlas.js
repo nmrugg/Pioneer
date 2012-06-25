@@ -767,6 +767,11 @@
                     }
                     
                     editor.event.trigger("update_map_layers");
+                    
+                    if (Number(select_el.value) !== editor.draw_on_canvas_level) {
+                        editor.event.trigger("change_drawing_level", {level: Number(select_el.value)});
+                    }
+                    
                 }
                 
                 editor.event.attach("change_map", function ()
@@ -886,6 +891,18 @@
                     create_select_options(where);
                 };
                 
+                select_el.onchange = function ()
+                {
+                    editor.event.trigger("change_drawing_level", {level: Number(select_el.value)});
+                };
+                
+                editor.event.attach("change_drawing_level", function (e)
+                {
+                    if (select_el.value !== e.level) {
+                        select_el.selectedIndex = select_el.options.length - 1 - e.level;
+                    }
+                });
+                
                 level_div.appendChild(document.createTextNode("Layer: "));
                 level_div.appendChild(select_el);
                 level_div.appendChild(document.createElement("br"));
@@ -965,7 +982,7 @@
                 hide_show_layers();
             });
         
-            level_select_onchange = function ()
+            level_select_onchange = function (forced)
             {
                 var value = Number(level_select_el.value);
                 
@@ -973,7 +990,19 @@
                 editor.draw_on_canvas_level = Number(value);
                 
                 hide_show_layers();
+                
+                if (!forced) {
+                    editor.event.trigger("change_drawing_level", {level: value});
+                }
             };
+            
+            editor.event.attach("change_drawing_level", function (e)
+            {
+                if (level_select_el.value !== e.level) {
+                    level_select_el.selectedIndex = level_select_el.options.length - 1 - e.level;
+                    level_select_onchange(true);
+                }
+            });
             
             level_select_el.onchange = level_select_onchange;
             level_select_el.onkeyup  = level_select_onchange;
@@ -1869,6 +1898,7 @@
                             /// Load the tilesheet.
                             window.localStorage.setItem("selected_tilesheet", editor.selected_tilesheet);
                             editor.load_tilesheet(editor.selected_tilesheet);
+                            editor.event.trigger("change_drawing_level", {level: tile.tile.l});
                             editor.change_tool("draw");
                         }
                     }
