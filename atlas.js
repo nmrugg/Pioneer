@@ -1321,7 +1321,6 @@
             editor.get_assets = (function ()
             {
                 var img  = document.createElement("img"),
-                    load_tilesheet,
                     tilesheet_select_onchange;
                 
                 editor.draw_tilesheet = function ()
@@ -1345,7 +1344,7 @@
                     }
                 };
                 
-                load_tilesheet = (function ()
+                editor.load_tilesheet = (function ()
                 {
                     var last_item;
                     
@@ -1370,7 +1369,12 @@
                 tilesheet_select_onchange = function ()
                 {
                     window.localStorage.setItem("selected_tilesheet", tilesheet_select.value);
-                    load_tilesheet(tilesheet_select.value);
+                    editor.load_tilesheet(tilesheet_select.value);
+                    
+                    if (typeof editor.cancel_draw_mode === "function") {
+                        /// When the selected tilesheet changes, it would draw the wrong graphic, so cancel the drawing mode.
+                        editor.cancel_draw_mode({keyCode: 27});
+                    }
                 };
                 
                 tilesheet_select.onchange = tilesheet_select_onchange;
@@ -1409,7 +1413,7 @@
                             editor.assets.images[asset].src = "/assets/" + asset;
                         });
                         
-                        load_tilesheet(tilesheet_select.value);
+                        editor.load_tilesheet(tilesheet_select.value);
                     });
                     
                     ajax.send();
@@ -1798,7 +1802,7 @@
                     for (i = sector.length - 1; i >= 0; i -= 1) {
                         base_tile = editor.tiles[editor.cur_map.assets[sector[i].a]][sector[i].t];
                         if ((level === -1 || sector[i].l === level) && sector[i].x < pos.x && sector[i].x + base_tile.w >= pos.x && sector[i].y < pos.y && sector[i].y + base_tile.h >= pos.y) {
-                            return {tile: sector[i], base_tile: base_tile};
+                            return {tile: sector[i], base_tile: base_tile, num: i, sector: sector};
                         }
                     }
                     
@@ -1831,19 +1835,12 @@
                         level = -1;
                         tile = look_through_sectors();
                     }
-                    
-                    if (tile) {
-                        console.log(tile.tile, tile.base_tile);
-                    }
                 }
+                
+                return tile;
             }
             
-            /*
-            onclick = function (e)
-            {
-                document.title = "clicked ";
-            };
-            */
+            
             onclick = function (e)
             {
                 var className,
@@ -1859,18 +1856,60 @@
                     
                     if (className === "map") {
                         tile = find_tile({x: e.clientX, y: e.clientY});
+                        
+                        if (tile) {
+                            editor.array_remove(tile.sector, tile.num);
+                            editor.draw_map();
+                            editor.selected_tilesheet = editor.cur_map.assets[tile.tile.a];
+                            editor.selected_tile = {
+                                tile:      tile.base_tile,
+                                tile_num:  tile.tile.t,
+                                tilesheet: editor.selected_tilesheet
+                            };
+                            /// Load the tilesheet.
+                            window.localStorage.setItem("selected_tilesheet", editor.selected_tilesheet);
+                            editor.load_tilesheet(editor.selected_tilesheet);
+                            editor.change_tool("draw");
+                        }
                     }
                 }
             };
+            
+            onmove = function (e)
+            {
+                var className,
+                    target = e.srcElement || e.originalTarget,
+                    tile;
+                
+                if (editor.tool === "select") {
+                    /// For some reason, Firefox occationally throws this error: "Error: Permission denied to access property 'className'",
+                    /// so put it in a try/catch.
+                    try {
+                        className = target.className;
+                    } catch (err) {}
+                    
+                    if (className === "map") {
+                        tile = find_tile({x: e.clientX, y: e.clientY});
+                        
+                        if (tile) {
+                            editor.cur_map.container.style.cursor = "move";
+                            return;
+                        }
+                    }
+                }
+                editor.cur_map.container.style.cursor = "default";
+            }
             
             return function (e)
             {
                 if (e.cur_tab === 1) {
                     window.addEventListener("mousemove",  onmove,  false);
                     window.addEventListener("click",      onclick, false);
+                    
                 } else {
                     window.removeEventListener("mousemove", onmove,  false);
                     window.removeEventListener("click",     onclick, false);
+                    editor.cur_map.container.style.cursor = "default";
                 }
             };
         }()));
