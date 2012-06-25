@@ -410,11 +410,8 @@
             
             function draw_sector(map, sector_x, sector_y, delay, callback)
             {
-                var base_tile,
-                    i,
-                    loop_and_draw,
-                    sector,
-                    tile;
+                var loop_and_draw,
+                    sector;
                 
                 if (!map.data[sector_x] || !map.data[sector_x][sector_y]) {
                     callback(false);
@@ -430,6 +427,10 @@
                 
                 loop_and_draw = function ()
                 {
+                    var base_tile,
+                        i,
+                        tile;
+                    
                     /// Structure:
                     /// map.data[sector_x][sector_y][tiles]
                     /// The tiles object:
