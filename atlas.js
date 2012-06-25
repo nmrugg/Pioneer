@@ -134,7 +134,7 @@
             {
                 editor.for_each_tile(callback, map_id);
             });
-        }
+        };
         
         editor.for_each_tile = function (callback, map_id)
         {
@@ -150,7 +150,7 @@
                 map_id = editor.world_map_num;
             }
             
-            map = editor.world_map[map_id]
+            map = editor.world_map[map_id];
             
             x_len = map.data.length;
             y_len = map.data[0].length;
@@ -406,8 +406,6 @@
         
         editor.draw_map = (function ()
         {
-            var que = [];
-            
             function draw_sector(map, sector_x, sector_y, delay, callback)
             {
                 var loop_and_draw,
@@ -515,7 +513,7 @@
                             } else {
                                 callback();
                             }
-                        };
+                        }
                         /// Is this row on the map?
                         if (starting_sector_y >= distance) {
                             loop(-distance);
@@ -540,7 +538,7 @@
                             } else {
                                 callback();
                             }
-                        };
+                        }
                         
                         /// Is this column on the map?
                         if (starting_sector_x + distance < map_size_x) {
@@ -566,7 +564,7 @@
                             } else {
                                 callback();
                             }
-                        };
+                        }
                         
                         /// Is this row on the map?
                         if (starting_sector_y + distance < map_size_y) {
@@ -592,7 +590,7 @@
                             } else {
                                 callback();
                             }
-                        };
+                        }
                         
                         /// Is this column on the map?
                         if (starting_sector_x >= distance) {
@@ -619,7 +617,7 @@
                                         }
                                     });
                                 });
-                            })
+                            });
                         });
                     };
                 }());
@@ -636,7 +634,7 @@
             var create_level_options,
                 map_box   = document.createElement("input"),
                 map_size_box = document.createElement("input"),
-                name_box  = document.createElement("input"), /// The name of the game
+                //name_box  = document.createElement("input"), /// The name of the game
                 snap_box  = document.createElement("input"),
                 show_grid = document.createElement("input");
             
@@ -698,8 +696,7 @@
                      */
                     (function ()
                     {
-                        var i,
-                            x,
+                        var x,
                             x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % sector_size)) / sector_size,
                             y,
                             y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % sector_size)) / sector_size;
@@ -740,7 +737,7 @@
                 }, 750);
             });
             
-            function create_level_options()
+            create_level_options = function()
             {
                 var add_el    = document.createElement("input"),
                     change_el = document.createElement("input"),
@@ -763,7 +760,7 @@
                     for (i = editor.cur_map.canvases.length - 1; i >= 0; i -= 1) {
                         ///NOTE: new Option(text, value, default_selected, selected);
                         select_el.options[select_el.options.length] = new Option(i + " " + editor.cur_map.canvases[i].type, i, false, (i === which));
-                    };
+                    }
                     
                     if (editor.draw_on_canvas_level > editor.cur_map.canvases.length) {
                         editor.draw_on_canvas_level = editor.cur_map.canvases.length - 1;
@@ -887,7 +884,7 @@
                     
                     editor.cur_map.canvases[where].type = (editor.cur_map.canvases[where].type === "bg" ? "fg" : "bg");
                     create_select_options(where);
-                }
+                };
                 
                 level_div.appendChild(document.createTextNode("Layer: "));
                 level_div.appendChild(select_el);
@@ -903,7 +900,7 @@
                 level_div.appendChild(change_el);
                 
                 return level_div;
-            }
+            };
             
             tabs[0].appendChild(document.createTextNode("Snap: "));
             tabs[0].appendChild(snap_box);
@@ -963,7 +960,7 @@
                 for (i = editor.cur_map.canvases.length - 1; i >= 0; i -= 1) {
                     ///NOTE: new Option(text, value, default_selected, selected);
                     level_select_el.options[level_select_el.options.length] = new Option(i + " " + editor.cur_map.canvases[i].type, i, false, (i === editor.draw_on_canvas_level));
-                };
+                }
                 
                 hide_show_layers();
             });
@@ -1164,7 +1161,7 @@
                     ///TODO: Let the user draw a selection rectangle.
                 };
                 /// NEEDED?
-                tilesheet_canvas.onmouseup = function (e)
+                tilesheet_canvas.onmouseup = function ()
                 {
                     editor.dragging_tilesheet = false;
                 };
@@ -1212,7 +1209,7 @@
                     
                     if (editor.tool === "draw") {
                         if (e.keyCode === 46) { /// Delete
-                            if (confirm("Danger:\n\nDo you really want to delete this tile from the tilesheet? It will remove ALL of this specific tile from ALL of the maps.")) {
+                            if (window.confirm("Danger:\n\nDo you really want to delete this tile from the tilesheet? It will remove ALL of this specific tile from ALL of the maps.")) {
                                 editor.array_remove(editor.tiles[editor.selected_tile.tilesheet], editor.selected_tile.tile_num);
                                 editor.cancel_draw_mode({keyCode: 27});
                                 
@@ -1403,7 +1400,7 @@
                         
                         tilesheet_select.options.length = 0;
                         
-                        assets.forEach(function (asset, i)
+                        assets.forEach(function (asset)
                         {
                             ///NOTE: new Option(text, value, default_selected, selected);
                             tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, (asset === selected_tilesheet));
@@ -1686,7 +1683,7 @@
                                         }
                                     }
                                     return false;
-                                }
+                                };
                                 
                                 ///NOTE: We have to assume that tiles can be no larger than a sector; however, they can overlap multiple sectors.
                                 /// Check all of the sourounding sectors for overlapping tiles.
