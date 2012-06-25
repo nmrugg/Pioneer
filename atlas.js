@@ -1888,7 +1888,8 @@
                         
                         if (tile) {
                             editor.array_remove(tile.sector, tile.num);
-                            editor.draw_map();
+                            /// Erase the tile from the map.
+                            editor.cur_map.canvases[tile.tile.l].cx.clearRect(tile.tile.x, tile.tile.y, tile.base_tile.w, tile.base_tile.h);
                             editor.selected_tilesheet = editor.cur_map.assets[tile.tile.a];
                             editor.selected_tile = {
                                 tile:      tile.base_tile,
@@ -1935,7 +1936,6 @@
                 if (e.cur_tab === 1) {
                     window.addEventListener("mousemove",  onmove,  false);
                     window.addEventListener("click",      onclick, false);
-                    
                 } else {
                     window.removeEventListener("mousemove", onmove,  false);
                     window.removeEventListener("click",     onclick, false);
