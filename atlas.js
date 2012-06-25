@@ -245,6 +245,7 @@
                         if (tabs === cur_tab) {
                             tab.style.display = "block";
                             a.classList.add("active-tab");
+                            window.localStorage.setItem("cur_tab", cur_tab);
                         } else {
                             tab.style.display = "none";
                         }
