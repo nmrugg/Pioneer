@@ -764,6 +764,10 @@
                         select_el.options[select_el.options.length] = new Option(i + " " + editor.cur_map.canvases[i].type, i, false, (i === which));
                     };
                     
+                    if (editor.draw_on_canvas_level > editor.cur_map.canvases.length) {
+                        editor.draw_on_canvas_level = editor.cur_map.canvases.length - 1;
+                    }
+                    
                     editor.event.trigger("update_map_layers");
                 }
                 
