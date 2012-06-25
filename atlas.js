@@ -9,6 +9,7 @@
     function start()
     {
         var editor = {},
+            sector_size = 640,
             tabs   = [];
         
         document.removeEventListener("DOMContentLoaded", start, false);
@@ -463,8 +464,8 @@
                     };
                 }
                 
-                starting_sector_x = (starting_pos.x - (starting_pos.x % 640)) / 640;
-                starting_sector_y = (starting_pos.y - (starting_pos.y % 640)) / 640;
+                starting_sector_x = (starting_pos.x - (starting_pos.x % sector_size)) / sector_size;
+                starting_sector_y = (starting_pos.y - (starting_pos.y % sector_size)) / sector_size;
                 
                 map_size_x = map.data.length;
                 map_size_y = map.data[0].length;
@@ -673,9 +674,9 @@
                     {
                         var i,
                             x,
-                            x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % 640)) / 640,
+                            x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % sector_size)) / sector_size,
                             y,
-                            y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % 640)) / 640;
+                            y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % sector_size)) / sector_size;
                         
                         /// Prevent 
                         if (x_sectors < 1) {
@@ -1599,7 +1600,7 @@
                                 tile = editor.tiles[editor.cur_map.assets[asset_id]][editor.selected_tile.tile_num];
                                 
                                 /// Make sure that the position is inside the sectors.
-                                sector_x = (pos.x - (pos.x % 640)) / 640;
+                                sector_x = (pos.x - (pos.x % sector_size)) / sector_size;
                                 if (sector_x < 0) {
                                     sector_x = 0;
                                 }
@@ -1607,7 +1608,7 @@
                                     sector_x = editor.cur_map.data.length - 1;
                                 }
                                 
-                                sector_y = (pos.y - (pos.y % 640)) / 640;
+                                sector_y = (pos.y - (pos.y % sector_size)) / sector_size;
                                 if (sector_y < 0) {
                                     sector_y = 0;
                                 }
@@ -1618,8 +1619,8 @@
                                 tile_right  = pos.x + tile.w;
                                 tile_bottom = pos.y + tile.h;
                                 
-                                overlaps_right = (sector_x < (tile_right  - (tile_right  % 640)) / 640);
-                                overlaps_down  = (sector_y < (tile_bottom - (tile_bottom % 640)) / 640);
+                                overlaps_right = (sector_x < (tile_right  - (tile_right  % sector_size)) / sector_size);
+                                overlaps_down  = (sector_y < (tile_bottom - (tile_bottom % sector_size)) / sector_size);
                                 
                                 /**
                                  * Check for and remove overlapping tiles.
