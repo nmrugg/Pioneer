@@ -1928,7 +1928,7 @@
                     }
                 }
                 editor.cur_map.container.style.cursor = "default";
-            }
+            };
             
             return function (e)
             {
