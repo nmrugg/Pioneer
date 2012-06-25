@@ -172,6 +172,48 @@
         
         document.body.appendChild(editor.el);
         
+        editor.event.attach("map_edit", (function ()
+        {
+            var timers = [];
+            
+            return function ()
+            {
+                /// Store the variables so that if the current maps changes, it knowns which one to save.
+                var which_map,
+                    which_num;
+                
+                if (!editor.cur_map || !editor.cur_map.data) {
+                    return;
+                }
+                
+                which_map = editor.cur_map.data;
+                which_num = editor.selected_map;
+                
+                if (!timers[which_num]) {
+                    timers[which_num] = window.setTimeout(function ()
+                    {
+                        var ajax;
+                        
+                        timers[which_num] = false;
+                        
+                        ajax = new window.XMLHttpRequest();
+                        ajax.open("POST", "/api");
+                        
+                        /// Wait until a response to reset the timer.
+                        /*
+                        ajax.addEventListener("load", function ()
+                        {
+                            
+                        });
+                        */
+                        
+                        ajax.send("action=save_map&data=" + JSON.stringify({map: which_map, num: Number(which_num)}));
+                        
+                    }, 3000);
+                }
+            };
+        }()));
+        
         /**
          * Create editor side panel.
          */
@@ -366,6 +408,7 @@
         /// For now, assume no maps exists.
         editor.world_map = [{}];
         editor.cur_map = editor.world_map[0];
+        editor.selected_map = 0;
         
         editor.cur_map.container = document.createElement("div");
         editor.cur_map.container.className = "container";
@@ -731,6 +774,8 @@
                         if (editor.cur_map.data.length > x_sectors) {
                             editor.cur_map.data = editor.cur_map.data.slice(0, x_sectors);
                         }
+                        
+                        editor.event.trigger("map_edit");
                         
                         editor.draw_map();
                     }());
@@ -1751,6 +1796,8 @@
                                     y: pos.y
                                 };
                                 
+                                editor.event.trigger("map_edit");
+                                
                                 /// Since nothing can over lap on the same level, clear the space first.
                                 editor.cur_map.canvases[level].cx.clearRect(pos.x, pos.y, tile.w, tile.h);
                                 editor.cur_map.canvases[level].cx.drawImage(editor.assets.images[editor.selected_tilesheet], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
@@ -1898,9 +1945,11 @@
                             };
                             /// Load the tilesheet.
                             window.localStorage.setItem("selected_tilesheet", editor.selected_tilesheet);
+                            ///TODO: Change the drop down selection too.
                             editor.load_tilesheet(editor.selected_tilesheet);
                             editor.event.trigger("change_drawing_level", {level: tile.tile.l});
                             editor.change_tool("draw");
+                            editor.event.trigger("map_edit");
                         }
                     }
                 }

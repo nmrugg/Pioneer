@@ -33,7 +33,35 @@ function array_remove(array, from, to)
     var rest = array.slice((to || from) + 1 || array.length);
     array.length = from < 0 ? array.length + from : from;
     return array.push.apply(array, rest);
-};
+}
+
+function save_map(response, data)
+{
+    response.writeHead(200, {"Content-Type": "text/plain"});
+    fs.readFile("data/maps.json", "utf8", function (err, maps)
+    {
+        if (maps) {
+            try {
+                maps = JSON.parse(maps);
+            } catch (e) {}
+        } else {
+            maps = [];
+        }
+        
+        if (typeof data.num !== "undefined" && data.map) {
+            maps[Number(data.num)] = data.map;
+            
+            ///NOTE: To avoid race conditions, write this file synchronously.
+            fs.writeFileSync("data/maps.json", JSON.stringify(maps), "utf8");
+        }
+        
+        response.end();
+    });
+    
+    try {
+        data = JSON.parse(data);
+    } catch (e) {}
+}
 
 function get_assets(response)
 {
@@ -131,12 +159,36 @@ function add_tiles(response, data)
     } catch (e) {}
 }
 
+function run_api(action, response, data)
+{
+    switch (action) {
+    case "get_assets":
+        get_assets(response);
+        return;
+    case "add_tiles":
+        add_tiles(response, data);
+        return;
+    case "get_tiles":
+        get_tiles(response);
+        return;
+    case "remove_tile":
+        remove_tile(response, data);
+        return;
+    case "save_map":
+        save_map(response, data)
+        return;
+    }
+    /// If the action is not valid, simply end.
+    response.end();
+}
+
 
 require("http").createServer(function (request, response)
 {
     var form,
-        url_parts = url.parse(request.url),
-        query;
+        post_data,
+        query,
+        url_parts = url.parse(request.url);
     
     /// Convert special charcters to normal (e.g., "%20" => " ").
     url_parts.pathname = decodeURI(url_parts.pathname);
@@ -171,24 +223,25 @@ require("http").createServer(function (request, response)
             response.writeHead(200, {"content-type": "text/plain"});
         });
     } else if (url_parts.pathname === "/api") {
-        query = qs.parse(url_parts.query);
-        
-        switch (query.action) {
-        case "get_assets":
-            get_assets(response);
-            return;
-        case "add_tiles":
-            add_tiles(response, query.data);
-            return;
-        case "get_tiles":
-            get_tiles(response);
-            return;
-        case "remove_tile":
-            remove_tile(response, query.data);
-            return;
+        if (request.method === "GET") {
+            query = qs.parse(url_parts.query);
+            run_api(query.action, response, query.data);
+        } else if (request.method === "POST") {
+            post_data = "";
+            
+            request.on("data", function(chunk)
+            {
+                /// Get the POST data.
+                post_data += chunk.toString();
+            });
+            
+            request.on("end", function(chunk)
+            {
+                post_data = qs.parse(post_data);
+                run_api(post_data.action, response, post_data.data);
+            });
         }
-        /// If the action is not valid, simply end.
-        response.end();
+
         return;
     } else {
         /// Check to see if the client is trying to access a real file.
