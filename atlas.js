@@ -214,10 +214,12 @@
                         {
                             return function (e)
                             {
-                                var old_el;
+                                var old_el,
+                                    old_tab;
                                 
                                 if (cur_tab !== this_tab) {
                                     old_el = document.getElementById("tab-" + cur_tab);
+                                    old_tab = cur_tab;
                                     if (old_el) {
                                         old_el.style.display = "none";
                                         document.getElementById("a_tab-" + cur_tab).classList.remove("active-tab");
@@ -226,6 +228,8 @@
                                     a.classList.add("active-tab");
                                     cur_tab = this_tab;
                                     window.localStorage.setItem("cur_tab", cur_tab);
+                                    
+                                    editor.event.trigger("tab_change", {cur_tab: cur_tab, old_tab: old_tab});
                                 }
                                 
                                 e.preventDefault();
@@ -247,6 +251,10 @@
                             tab.style.display = "block";
                             a.classList.add("active-tab");
                             window.localStorage.setItem("cur_tab", cur_tab);
+                            window.setTimeout(function ()
+                            {
+                                editor.event.trigger("tab_change", {cur_tab: cur_tab});
+                            }, 0);
                         } else {
                             tab.style.display = "none";
                         }
@@ -1743,6 +1751,110 @@
                 }
             };
         }());
+        
+        editor.event.attach("tab_change", (function ()
+        {
+            var onclick,
+                onmove;
+            
+            function find_tile(pos)
+            {
+                var i,
+                    level = editor.draw_on_canvas_level,
+                    starting_sector_x,
+                    starting_sector_y,
+                    tile;
+                
+                function check_sector(sector_x, sector_y)
+                {
+                    var base_tile,
+                        sector;
+                    
+                    if (sector_x < 0 || sector_y < 0 || !editor.cur_map.data[sector_x] || !editor.cur_map.data[sector_x][sector_y]) {
+                        return;
+                    }
+                    
+                    sector = editor.cur_map.data[sector_x][sector_y];
+                    
+                    for (i = sector.length - 1; i >= 0; i -= 1) {
+                        base_tile = editor.tiles[editor.cur_map.assets[sector[i].a]][sector[i].t];
+                        if ((level === -1 || sector[i].l === level) && sector[i].x < pos.x && sector[i].x + base_tile.w >= pos.x && sector[i].y < pos.y && sector[i].y + base_tile.h >= pos.y) {
+                            return {tile: sector[i], base_tile: base_tile};
+                        }
+                    }
+                    
+                    return false;
+                }
+                
+                function look_through_sectors()
+                {
+                    var tile = check_sector(starting_sector_x, starting_sector_y);
+                    if (!tile) {
+                        /// Try nearby tiles because they can overlap.
+                        tile = check_sector(starting_sector_x - 1, starting_sector_y);
+                        if (!tile) {
+                            tile = check_sector(starting_sector_x, starting_sector_y - 1);
+                            if (!tile) {
+                                tile = check_sector(starting_sector_x - 1, starting_sector_y - 1);
+                            }
+                        }
+                    }
+                    return tile;
+                }
+                
+                starting_sector_x = (pos.x - (pos.x % sector_size)) / sector_size;
+                starting_sector_y = (pos.y - (pos.y % sector_size)) / sector_size;
+                
+                if (editor.cur_map.data) {
+                    tile = look_through_sectors();
+                    if (!tile) {
+                        /// If it didn't find anything on the selected layer, try looking on any layer.
+                        level = -1;
+                        tile = look_through_sectors();
+                    }
+                    
+                    if (tile) {
+                        console.log(tile.tile, tile.base_tile);
+                    }
+                }
+            }
+            
+            /*
+            onclick = function (e)
+            {
+                document.title = "clicked ";
+            };
+            */
+            onclick = function (e)
+            {
+                var className,
+                    target = e.srcElement || e.originalTarget,
+                    tile;
+                
+                if (editor.tool === "select") {
+                    /// For some reason, Firefox occationally throws this error: "Error: Permission denied to access property 'className'",
+                    /// so put it in a try/catch.
+                    try {
+                        className = target.className;
+                    } catch (err) {}
+                    
+                    if (className === "map") {
+                        tile = find_tile({x: e.clientX, y: e.clientY});
+                    }
+                }
+            };
+            
+            return function (e)
+            {
+                if (e.cur_tab === 1) {
+                    window.addEventListener("mousemove",  onmove,  false);
+                    window.addEventListener("click",      onclick, false);
+                } else {
+                    window.removeEventListener("mousemove", onmove,  false);
+                    window.removeEventListener("click",     onclick, false);
+                }
+            };
+        }()));
     }
     
     document.addEventListener("DOMContentLoaded", function ()
