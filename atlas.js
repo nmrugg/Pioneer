@@ -176,6 +176,18 @@
         {
             var timers = [];
             
+            function create_layer_obj(arr)
+            {
+                var layers = [];
+                
+                arr.forEach(function (canvas)
+                {
+                    layers[layers.length] = canvas.type;
+                });
+                
+                return layers;
+            };
+            
             return function ()
             {
                 /// Store the variables so that if the current maps changes, it knowns which one to save.
@@ -186,7 +198,7 @@
                     return;
                 }
                 
-                which_map = editor.cur_map.data;
+                which_map = editor.cur_map;
                 which_num = editor.selected_map;
                 
                 if (!timers[which_num]) {
@@ -207,7 +219,7 @@
                         });
                         */
                         
-                        ajax.send("action=save_map&data=" + JSON.stringify({map: which_map, num: Number(which_num)}));
+                        ajax.send("action=save_map&data=" + JSON.stringify({data: which_map.data, size: which_map.size, assets: which_map.assets, layers: create_layer_obj(which_map.canvases), num: Number(which_num)}));
                         
                     }, 3000);
                 }
@@ -401,51 +413,106 @@
          * Create the map canvases
          */
         
+        ///TODO: Save and load camera (or character) position.
         editor.camera = {x: 0, y: 0};
         
         /// Create a sample world_map object.
-        ///NOTE: This should be loaded from the server (if any map exists).
-        /// For now, assume no maps exists.
-        editor.world_map = [{}];
+        editor.world_map = [];
+        ///TODO: Get the current map number.
+        if (!editor.world_map[0]) {
+            editor.world_map[0] = {};
+        }
         editor.cur_map = editor.world_map[0];
+        editor.cur_map.loaded = false;
         editor.selected_map = 0;
         
-        editor.cur_map.container = document.createElement("div");
-        editor.cur_map.container.className = "container";
-        
-        editor.cur_map.container.style.top  = editor.camera.x + "px";
-        editor.cur_map.container.style.left = editor.camera.y + "px";
-        
-        editor.cur_map.canvases = [
-            {
-                el: document.createElement("canvas"),
-                type: "bg"
-            },
-            {
-                el: document.createElement("canvas"),
-                type: "bg"
-            },
-            {
-                el: document.createElement("canvas"),
-                type: "fg"
-            }
-        ];
-        
-        editor.cur_map.canvases.forEach(function (canvas)
+        /**
+         * Load the map data.
+         */
+        editor.get_map = function (which)
         {
-            canvas.cx = canvas.el.getContext("2d");
-            canvas.el.className = "map";
+            var ajax = new window.XMLHttpRequest();
             
-            editor.cur_map.container.appendChild(canvas.el);
-        });
-        
-        /// Prevent the browser from trying to select text or draw elements when clicking on the canvas.
-        editor.cur_map.canvases[editor.cur_map.canvases.length - 1].el.onmousedown = function (e)
-        {
-            e.preventDefault();
+            ajax.open("GET", "/api?action=get_map&data=" + JSON.stringify({num: which}));
+            
+            ajax.addEventListener("load", function ()
+            {
+                var data = {};
+                
+                try {
+                    data = JSON.parse(ajax.responseText);
+                } catch (e) {}
+                
+                if (!editor.world_map[which]) {
+                    editor.world_map[which] = {};
+                }
+                
+                if (!data.size) {
+                    data.size = {x: 4000, y: 4000};
+                }
+                if (!data.layers || !Array.isArray(data.layers)) {
+                    data.layers = ["bg","bg","fg"];
+                }
+                
+                editor.world_map[which].data = data.data;
+                
+                editor.world_map[which].size = data.size;
+                
+                editor.world_map[which].container = document.createElement("div");
+                editor.world_map[which].container.className = "container";
+                
+                editor.world_map[which].container.style.top  = editor.camera.x + "px";
+                editor.world_map[which].container.style.left = editor.camera.y + "px";
+                
+                /*
+                editor.world_map[which].canvases = [
+                    {
+                        el: document.createElement("canvas"),
+                        type: "bg"
+                    },
+                    {
+                        el: document.createElement("canvas"),
+                        type: "bg"
+                    },
+                    {
+                        el: document.createElement("canvas"),
+                        type: "fg"
+                    }
+                ];
+                */
+                
+                editor.world_map[which].canvases = [];
+                data.layers.forEach(function (layer, i)
+                {
+                    editor.world_map[which].canvases[i] = {
+                        el: document.createElement("canvas"),
+                        type: layer
+                    };
+                });
+                
+                editor.world_map[which].canvases.forEach(function (canvas)
+                {
+                    canvas.cx = canvas.el.getContext("2d");
+                    canvas.el.className = "map";
+                    
+                    editor.world_map[which].container.appendChild(canvas.el);
+                });
+                
+                /// Prevent the browser from trying to select text or draw elements when clicking on the canvas.
+                editor.world_map[which].canvases[editor.world_map[which].canvases.length - 1].el.onmousedown = function (e)
+                {
+                    e.preventDefault();
+                };
+                
+                document.body.appendChild(editor.world_map[which].container);
+                //debugger;
+                editor.change_map_size(editor.world_map[which].size);
+            });
+            
+            ajax.send();
         };
         
-        document.body.appendChild(editor.cur_map.container);
+        editor.get_map(editor.selected_map);
         
         editor.draw_map = (function ()
         {
@@ -669,6 +736,66 @@
             };
         }());
         
+        editor.change_map_size = function (size)
+        {
+            editor.cur_map.size = size;
+            
+            /**
+             * Resize map canvases and map sectors.
+             */
+            editor.cur_map.canvases.forEach(function (canvas)
+            {
+                canvas.el.setAttribute("width",  editor.cur_map.size.x);
+                canvas.el.setAttribute("height", editor.cur_map.size.y);
+            });
+            
+            /**
+             * Load/create the map data.
+             */
+            (function ()
+            {
+                var x,
+                    x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % sector_size)) / sector_size,
+                    y,
+                    y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % sector_size)) / sector_size;
+                
+                /// Prevent 
+                if (x_sectors < 1) {
+                    x_sectors = 1;
+                }
+                if (y_sectors < 1) {
+                    y_sectors = 1;
+                }
+                
+                if (!editor.cur_map.data) {
+                    ///TODO: It could also create a JSON string and then stringify it.
+                    editor.cur_map.data = [];
+                }
+                
+                ///TODO: Check and warn about deleting data.
+                for (x = 0; x < x_sectors; x += 1) {
+                    if (!editor.cur_map.data[x]) {
+                        editor.cur_map.data[x] = [];
+                    }
+                    for (y = 0; y < y_sectors; y += 1) {
+                        if (!editor.cur_map.data[x][y]) {
+                            editor.cur_map.data[x][y] = [];
+                        }
+                    }
+                    if (editor.cur_map.data[x].length > y_sectors) {
+                        editor.cur_map.data[x] = editor.cur_map.data[x].slice(0, y_sectors);
+                    }
+                }
+                if (editor.cur_map.data.length > x_sectors) {
+                    editor.cur_map.data = editor.cur_map.data.slice(0, x_sectors);
+                }
+                
+                editor.event.trigger("map_edit");
+                
+                editor.draw_map();
+            }());
+        };
+        
         /**
          * Create World editor (tab 0)
          */
@@ -708,7 +835,7 @@
             });
             
             map_size_box.type = "text";
-            editor.bind_input_box(map_size_box, "", "4000 x 4000", function (value)
+            editor.bind_input_box(map_size_box, "", "", function (value)
             {
                 var new_size = editor.parse_dimension(value);
                 
@@ -719,66 +846,12 @@
                  */
                 window.setTimeout(function ()
                 {
-                    if (editor.cur_map.size && new_size.x === editor.cur_map.size.x && new_size.y === editor.cur_map.size.y) {
+                    if (!editor.cur_map.loaded || (!new_size.x && !new_size.y) || (editor.cur_map.size && new_size.x === editor.cur_map.size.x && new_size.y === editor.cur_map.size.y)) {
                         /// Don't bother updating if nothing changed.
                         return;
                     }
                     
-                    editor.cur_map.size = editor.parse_dimension(value);
-                    /**
-                    * Resize map canvases and map sectors.
-                    */
-                    editor.cur_map.canvases.forEach(function (canvas)
-                    {
-                        canvas.el.setAttribute("width",  editor.cur_map.size.x);
-                        canvas.el.setAttribute("height", editor.cur_map.size.y);
-                    });
-                    
-                    /**
-                     * Load/create the map data.
-                     */
-                    (function ()
-                    {
-                        var x,
-                            x_sectors = (editor.cur_map.size.x - (editor.cur_map.size.x % sector_size)) / sector_size,
-                            y,
-                            y_sectors = (editor.cur_map.size.y - (editor.cur_map.size.y % sector_size)) / sector_size;
-                        
-                        /// Prevent 
-                        if (x_sectors < 1) {
-                            x_sectors = 1;
-                        }
-                        if (y_sectors < 1) {
-                            y_sectors = 1;
-                        }
-                        
-                        if (!editor.cur_map.data) {
-                            ///TODO: It could also create a JSON string and then stringify it.
-                            editor.cur_map.data = [];
-                        }
-                        
-                        ///TODO: Check and warn about deleting data.
-                        for (x = 0; x < x_sectors; x += 1) {
-                            if (!editor.cur_map.data[x]) {
-                                editor.cur_map.data[x] = [];
-                            }
-                            for (y = 0; y < y_sectors; y += 1) {
-                                if (!editor.cur_map.data[x][y]) {
-                                    editor.cur_map.data[x][y] = [];
-                                }
-                            }
-                            if (editor.cur_map.data[x].length > y_sectors) {
-                                editor.cur_map.data[x] = editor.cur_map.data[x].slice(0, y_sectors);
-                            }
-                        }
-                        if (editor.cur_map.data.length > x_sectors) {
-                            editor.cur_map.data = editor.cur_map.data.slice(0, x_sectors);
-                        }
-                        
-                        editor.event.trigger("map_edit");
-                        
-                        editor.draw_map();
-                    }());
+                    editor.change_map_size(editor.parse_dimension(value));
                 }, 750);
             });
             
@@ -800,6 +873,10 @@
                     
                     if (typeof which === "undefined") {
                         which = editor.draw_on_canvas_level;
+                    }
+                    
+                    if (!editor.cur_map.loaded) {
+                        return;
                     }
                     
                     for (i = editor.cur_map.canvases.length - 1; i >= 0; i -= 1) {
@@ -1982,13 +2059,15 @@
             
             return function (e)
             {
-                if (e.cur_tab === 1) {
-                    window.addEventListener("mousemove",  onmove,  false);
-                    window.addEventListener("click",      onclick, false);
-                } else {
-                    window.removeEventListener("mousemove", onmove,  false);
-                    window.removeEventListener("click",     onclick, false);
-                    editor.cur_map.container.style.cursor = "default";
+                if (editor.cur_map && editor.cur_map.loaded) {
+                    if (e.cur_tab === 1) {
+                        window.addEventListener("mousemove",  onmove,  false);
+                        window.addEventListener("click",      onclick, false);
+                    } else {
+                        window.removeEventListener("mousemove", onmove,  false);
+                        window.removeEventListener("click",     onclick, false);
+                        editor.cur_map.container.style.cursor = "default";
+                    }
                 }
             };
         }()));

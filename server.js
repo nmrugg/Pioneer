@@ -35,6 +35,34 @@ function array_remove(array, from, to)
     return array.push.apply(array, rest);
 }
 
+function get_map(response, data)
+{
+    response.writeHead(200, {"Content-Type": "application/json"});
+    fs.readFile("data/tiles.json", "utf8", function (err, maps)
+    {
+        var map;
+        
+        if (!maps) {
+            tiles = "[]";
+        }
+        
+        try {
+            maps = JSON.parse(maps);
+        } catch (e) {}
+        
+        if (!data.num) {
+            /// If no map is specified, return all of the maps.
+            map = maps;
+        } else if (maps[data.num]) {
+            map = maps[data.num];
+        } else {
+            map = {};
+        }
+        
+        response.end(JSON.stringify(map));
+    });
+}
+
 function save_map(response, data)
 {
     response.writeHead(200, {"Content-Type": "text/plain"});
@@ -48,8 +76,13 @@ function save_map(response, data)
             maps = [];
         }
         
-        if (typeof data.num !== "undefined" && data.map) {
-            maps[Number(data.num)] = data.map;
+        if (typeof data.num !== "undefined" && data.data) {
+            maps[Number(data.num)] = {
+                data:   data.data,
+                size:   data.size,
+                assets: data.assets,
+                layers: data.layers
+            };
             
             ///NOTE: To avoid race conditions, write this file synchronously.
             fs.writeFileSync("data/maps.json", JSON.stringify(maps), "utf8");
@@ -176,6 +209,9 @@ function run_api(action, response, data)
         return;
     case "save_map":
         save_map(response, data)
+        return;
+    case "get_map":
+        get_map(response, data)
         return;
     }
     /// If the action is not valid, simply end.
