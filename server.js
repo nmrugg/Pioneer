@@ -38,7 +38,7 @@ function array_remove(array, from, to)
 function get_map(response, data)
 {
     response.writeHead(200, {"Content-Type": "application/json"});
-    fs.readFile("data/tiles.json", "utf8", function (err, maps)
+    fs.readFile("data/maps.json", "utf8", function (err, maps)
     {
         var map;
         
@@ -50,7 +50,7 @@ function get_map(response, data)
             maps = JSON.parse(maps);
         } catch (e) {}
         
-        if (!data.num) {
+        if (!data || typeof data.num === "undefined") {
             /// If no map is specified, return all of the maps.
             map = maps;
         } else if (maps[data.num]) {
@@ -90,10 +90,6 @@ function save_map(response, data)
         
         response.end();
     });
-    
-    try {
-        data = JSON.parse(data);
-    } catch (e) {}
 }
 
 function get_assets(response)
@@ -145,10 +141,6 @@ function remove_tile(response, data)
         ///NOTE: To avoid race conditions, write this file synchronously.
         fs.writeFileSync("data/tiles.json", tiles_str, "utf8");
     });
-    
-    try {
-        data = JSON.parse(data);
-    } catch (e) {}
 }
 
 function add_tiles(response, data)
@@ -186,14 +178,14 @@ function add_tiles(response, data)
         ///NOTE: To avoid race conditions, write this file synchronously.
         fs.writeFileSync("data/tiles.json", tiles_str, "utf8");
     });
-    
-    try {
-        data = JSON.parse(data);
-    } catch (e) {}
 }
 
 function run_api(action, response, data)
 {
+    try {
+        data = JSON.parse(data);
+    } catch (e) {}
+    
     switch (action) {
     case "get_assets":
         get_assets(response);

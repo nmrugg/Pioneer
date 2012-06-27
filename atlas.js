@@ -450,6 +450,7 @@
                 if (!data.size) {
                     data.size = {x: 4000, y: 4000};
                 }
+                
                 if (!data.layers || !Array.isArray(data.layers)) {
                     data.layers = ["bg","bg","fg"];
                 }
@@ -457,6 +458,8 @@
                 editor.world_map[which].data = data.data;
                 
                 editor.world_map[which].size = data.size;
+                
+                editor.world_map[which].assets = data.assets;
                 
                 editor.world_map[which].container = document.createElement("div");
                 editor.world_map[which].container.className = "container";
@@ -506,6 +509,7 @@
                 
                 document.body.appendChild(editor.world_map[which].container);
                 //debugger;
+                ///NOTE: editor.change_map_size() triggers editor.draw_map().
                 editor.change_map_size(editor.world_map[which].size);
             });
             
