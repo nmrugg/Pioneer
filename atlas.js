@@ -516,7 +516,33 @@
             ajax.send();
         };
         
-        editor.get_map(editor.selected_map);
+        /**
+         * Get tiles at start up.
+         */
+        (function get_tiles()
+        {
+            var ajax = new window.XMLHttpRequest();
+            
+            ajax.open("GET", "/api?action=get_tiles");
+            
+            ajax.addEventListener("load", function ()
+            {
+                var cur_tiles = {};
+                
+                try {
+                    cur_tiles = JSON.parse(ajax.responseText);
+                } catch (e) {}
+                
+                editor.tiles = cur_tiles;
+                
+                /// Now, get the assets.
+                editor.get_assets();
+                
+                editor.get_map(editor.selected_map);
+            });
+            
+            ajax.send();
+        }());
         
         editor.draw_map = (function ()
         {
@@ -1574,33 +1600,6 @@
                     ajax.send();
                 };
             }());
-        }());
-        
-        
-        /**
-         * Get tiles at start up.
-         */
-        (function get_tiles()
-        {
-            var ajax = new window.XMLHttpRequest();
-            
-            ajax.open("GET", "/api?action=get_tiles");
-            
-            ajax.addEventListener("load", function ()
-            {
-                var cur_tiles = {};
-                
-                try {
-                    cur_tiles = JSON.parse(ajax.responseText);
-                } catch (e) {}
-                
-                editor.tiles = cur_tiles;
-                
-                /// Now, get the assets.
-                editor.get_assets();
-            });
-            
-            ajax.send();
         }());
         
     
