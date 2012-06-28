@@ -233,7 +233,7 @@
                     if (func_list[name]) {
                         func_arr_len = func_list[name].length;
                         
-                        if (!Array.isArray(e)) {
+                        if (!(e instanceof Object)) {
                             /// If the event object was not specificed, it needs to be created in order to attach stopPropagation() to it.
                             e = {};
                         }
@@ -2174,6 +2174,7 @@
                 return function ontab_change(e)
                 {
                     if (editor.cur_map && editor.cur_map.loaded) {
+                        /// If the current tab is the Draw tab, let the user be able to select already drawn tiles.
                         if (e.cur_tab === 1) {
                             window.addEventListener("mousemove",  onmove,  false);
                             window.addEventListener("click",      onclick, false);
