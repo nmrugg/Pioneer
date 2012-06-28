@@ -1686,7 +1686,18 @@
                     
                     editor.event.attach("load_assets", assets_updated);
                     
-                    assets_updated();
+                    
+                    /// Set the default tilesheet.
+                    editor.selected_tilesheet = window.localStorage.getItem("selected_tilesheet");
+                    
+                    /// Make sure the editor has time to be loaded onto the page.
+                    window.setTimeout(function ()
+                    {
+                        /// Update the asset box.
+                        assets_updated();
+                        /// Draw the selected tilesheet.
+                        tilesheet_select_onchange();
+                    }, 0);
                 }());
             }());
             
