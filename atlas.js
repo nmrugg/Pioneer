@@ -135,6 +135,9 @@
             ajax.send();
         };
         
+        /// **************************
+        /// * Start loading the game *
+        /// **************************
         editor.get_game_data(function ()
         {
             if (!editor.world_map[editor.selected_map]) {
@@ -152,6 +155,7 @@
                     editor.get_assets(function () {
                         editor.draw_map(editor.selected_map, null, function ()
                         {
+                            editor.cur_map.loaded = true;
                             editor.load_panel();
                         });
                     });
@@ -809,8 +813,8 @@
         editor.load_panel = function ()
         {
             /**
-            * Create editor side panel.
-            */
+             * Create editor side panel.
+             */
             (function ()
             {
                 var pos = window.localStorage.getItem("editor_pos");
@@ -827,8 +831,8 @@
                 }
                 
                 /**
-                * Create tabs
-                */
+                 * Create tabs
+                 */
                 (function ()
                 {
                     var cur_tab,
@@ -932,8 +936,8 @@
             }());
             
             /**
-            * Create World editor (tab 0)
-            */
+             * Create World editor (tab 0)
+             */
             (function ()
             {
                 var create_level_options,
@@ -970,15 +974,15 @@
                 });
                 
                 map_size_box.type = "text";
-                editor.bind_input_box(map_size_box, "", "", function (value)
+                editor.bind_input_box(map_size_box, "", editor.cur_map.size.x + " x " + editor.cur_map.size.y, function (value)
                 {
                     var new_size = editor.parse_dimension(value);
                     
                     /**
-                    * Setup the map array.
-                    *
-                    * @note This is delayed so that as the user types, it is not updated instantly.
-                    */
+                     * Setup the map array.
+                     *
+                     * @note This is delayed so that as the user types, it is not updated instantly.
+                     */
                     window.setTimeout(function ()
                     {
                         if (!editor.cur_map.loaded || (!new_size.x && !new_size.y) || (editor.cur_map.size && new_size.x === editor.cur_map.size.x && new_size.y === editor.cur_map.size.y)) {
@@ -1020,8 +1024,13 @@
                             select_el.options[select_el.options.length] = new Option(i + " " + editor.cur_map.canvases[i].type, i, false, (i === which));
                         }
                         
+                        /// Is the currently stored level greater than the actual number of layers; if so, move it down one.
                         if (editor.draw_on_canvas_level > editor.cur_map.canvases.length) {
                             editor.draw_on_canvas_level = editor.cur_map.canvases.length - 1;
+                        }
+                        
+                        if (typeof which === "number") {
+                            editor.draw_on_canvas_level = which;
                         }
                         
                         editor.event.trigger("update_map_layers");
@@ -1192,8 +1201,8 @@
             }());
             
             /**
-            * Create Draw tab (tab 1)
-            */
+             * Create Draw tab (tab 1)
+             */
             (function ()
             {
                 var hide_show_layers,
@@ -1334,8 +1343,8 @@
                     tilesheet_options.appendChild(size_box);
                     
                     /**
-                    * Calculate the position and size of the tilesheet selection rectangle.
-                    */
+                     * Calculate the position and size of the tilesheet selection rectangle.
+                     */
                     function get_selection_rec(mouse_pos, dont_snap)
                     {
                         var canvas_pos = tilesheet_canvas.getClientRects()[0],
@@ -1394,8 +1403,8 @@
                     }
                     
                     /**
-                    * Draw the tile selection square or highlight a tile.
-                    */
+                     * Draw the tile selection square or highlight a tile.
+                     */
                     tilesheet_canvas.onmousemove = function (e)
                     {
                         var tile_selected;
@@ -1524,8 +1533,8 @@
                     }, false);
                     
                     /**
-                    * Draw grid when hovering over the Auto Split button.
-                    */
+                     * Draw grid when hovering over the Auto Split button.
+                     */
                     auto_split.onmouseover = function ()
                     {
                         var height = Number(tilesheet_canvas.height),
@@ -1560,16 +1569,16 @@
                         tilesheet_canvas_cx.stroke();
                     };
                     /**
-                    * Remove the grid when the mouse moves off of the button.
-                    */
+                     * Remove the grid when the mouse moves off of the button.
+                     */
                     auto_split.onmouseout = function ()
                     {
                         editor.draw_tilesheet();
                     };
                     
                     /**
-                    * Split up all of the tiles.
-                    */
+                     * Split up all of the tiles.
+                     */
                     auto_split.onclick = function ()
                     {
                         var ajax = new window.XMLHttpRequest(),
@@ -1703,8 +1712,8 @@
             
         
             /**
-            * Enabled drag and drop uploading.
-            */
+             * Enabled drag and drop uploading.
+             */
             (function ()
             {
                 function ignore_event(e)
@@ -1816,8 +1825,8 @@
                             }
                             
                             /**
-                            * Move the floating image with the cursor.
-                            */
+                             * Move the floating image with the cursor.
+                             */
                             onmove = function (e)
                             {
                                 /// Turn off snap with the ctrl key.
@@ -1909,10 +1918,10 @@
                                     overlaps_down  = (sector_y < (tile_bottom - (tile_bottom % sector_size)) / sector_size);
                                     
                                     /**
-                                    * Check for and remove overlapping tiles.
-                                    *
-                                    * @return FALSE if no exact matches, TRUE if an exact match (same position and same tile)
-                                    */
+                                     * Check for and remove overlapping tiles.
+                                     *
+                                     * @return FALSE if no exact matches, TRUE if an exact match (same position and same tile)
+                                     */
                                     remove_overlapping = function(sector_x, sector_y)
                                     {
                                         var sector,
@@ -1988,8 +1997,8 @@
                             window.addEventListener("mouseup", onup, false);
                             
                             /**
-                            * Allow the user to get out of draw mode by pressing escape.
-                            */
+                             * Allow the user to get out of draw mode by pressing escape.
+                             */
                             editor.cancel_draw_mode = function(e)
                             {
                                 if (e.keyCode === 27) { /// Escape
