@@ -394,14 +394,6 @@
                 var assets = [],
                     download_assets;
                 
-                function check_asset_for_errors()
-                {
-                    return function ()
-                    {
-                        console.log(this.src, this.width);
-                    };
-                }
-                
                 try {
                     assets = JSON.parse(ajax.responseText);
                 } catch (e) {}
@@ -421,7 +413,6 @@
                     if (i < assets.length) {
                         asset = assets[i];
                         editor.assets.images[asset] = document.createElement("img");
-                        //editor.assets.images[asset].onerror = check_asset_for_errors();
                         editor.assets.images[asset].onerror = function ()
                         {
                             console.log("error");
@@ -444,16 +435,6 @@
                 };
                 
                 download_assets(0);
-                
-                assets.forEach(function (asset)
-                {
-                    ///TODO: Load these before anything else with a progress bar.
-                    editor.assets.images[asset] = document.createElement("img");
-                    editor.assets.images[asset].onerror = check_asset_for_errors();
-                    editor.assets.images[asset].src = "/assets/" + asset;
-                });
-                
-                //editor.load_tilesheet(tilesheet_select.value);
             });
             
             ajax.send();
@@ -769,7 +750,7 @@
                 });
                 
                 return layers;
-            };
+            }
             
             return function ()
             {
@@ -2186,8 +2167,8 @@
                     }
                 };
             }()));
-        }
-    };
+        };
+    }
     
     document.addEventListener("DOMContentLoaded", function ()
     {
