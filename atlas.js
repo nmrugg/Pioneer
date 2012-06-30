@@ -2170,8 +2170,9 @@
             window.setTimeout(function ()
             {
                 var animation_select = document.createElement("select"),
-                    new_button = document.createElement("input"),
-                    del_button = document.createElement("input"),
+                    new_button  = document.createElement("input"),
+                    del_button  = document.createElement("input"),
+                    save_button = document.createElement("input"),
                     speed_box  = document.createElement("input"),
                     container_div = document.createElement("div"),
                     tilesheet_select = document.createElement("select"),
@@ -2185,11 +2186,13 @@
                 
                 tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
                 
-                new_button.type = "button";
-                del_button.type = "button";
+                new_button.type  = "button";
+                del_button.type  = "button";
+                save_button.type = "button";
                 
-                new_button.value = "New Animation";
-                del_button.value = "Delete Animation";
+                new_button.value  = "New";
+                del_button.value  = "Delete";
+                save_button.value = "Save";
                 
                 container_div.style.overflow = "scroll";
                 container_div.className = "canvas_container";
@@ -2335,6 +2338,8 @@
                 tabs[2].appendChild(animation_select);
                 tabs[2].appendChild(document.createElement("br"));
                 tabs[2].appendChild(new_button);
+                tabs[2].appendChild(document.createTextNode(" "));
+                tabs[2].appendChild(save_button);
                 tabs[2].appendChild(document.createTextNode(" "));
                 tabs[2].appendChild(del_button);
                 tabs[2].appendChild(document.createElement("br"));
