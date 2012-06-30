@@ -791,6 +791,67 @@
         }()));
         
         
+        /**
+         * Calculate the position and size of the tilesheet selection rectangle.
+         */
+        editor.get_selection_rec = function (tilesheet_canvas, mouse_pos, dont_snap, size, snap)
+        {
+            var canvas_pos = tilesheet_canvas.getClientRects()[0],
+                x,
+                y;
+            
+            if (!size) {
+                size = {};
+            }
+            
+            x = mouse_pos.x - canvas_pos.left;
+            y = mouse_pos.y - canvas_pos.top;
+            
+            if (!dont_snap) {
+                if (snap.x > 0) {
+                    x = x - (x % snap.x);
+                }
+                if (snap.y > 0) {
+                    y = y - (y % snap.y);
+                }
+            }
+            
+            if (size.x < 1) {
+                size.x = 1;
+            }
+            if (size.y < 1) {
+                size.y = 1;
+            }
+            
+            return {x: x, y: y, w: size.x, h: size.y};
+        };
+        
+        editor.get_hover_tile = function (tilesheet_canvas, selected_tilesheet, mouse_event)
+        {
+            var tile_selected = false,
+                rect;
+            
+            if (editor.tiles && editor.tiles[selected_tilesheet]) {
+                /// Check to see if the mouse is hovering over an already created tile.
+                rect = editor.get_selection_rec(tilesheet_canvas, {x: mouse_event.clientX, y: mouse_event.clientY}, true);
+                editor.tiles[selected_tilesheet].every(function (tile, num)
+                {
+                    if (rect.x >= tile.x && rect.x <= tile.x + tile.w && rect.y >= tile.y && rect.y <= tile.y + tile.h) {
+                        tile_selected = {
+                            tile: tile,
+                            num: num
+                        };
+                        return false; /// I.e., break.
+                    }
+                    return true;
+                });
+                
+                return tile_selected;
+            }
+            /// There are no tiles for this image, it cannot hover over anything.
+            return false;
+        };
+        
         editor.load_panel = function ()
         {
             /**
@@ -1324,65 +1385,6 @@
                     tilesheet_options.appendChild(size_box);
                     
                     /**
-                     * Calculate the position and size of the tilesheet selection rectangle.
-                     */
-                    function get_selection_rec(mouse_pos, dont_snap)
-                    {
-                        var canvas_pos = tilesheet_canvas.getClientRects()[0],
-                            size = editor.parse_dimension(size_box.value),
-                            snap = editor.parse_dimension(snap_box.value),
-                            x,
-                            y;
-                        
-                        x = mouse_pos.x - canvas_pos.left;
-                        y = mouse_pos.y - canvas_pos.top;
-                        
-                        if (!dont_snap) {
-                            if (snap.x > 0) {
-                                x = x - (x % snap.x);
-                            }
-                            if (snap.y > 0) {
-                                y = y - (y % snap.y);
-                            }
-                        }
-                        
-                        if (size.x < 1) {
-                            size.x = 1;
-                        }
-                        if (size.y < 1) {
-                            size.y = 1;
-                        }
-                        
-                        return {x: x, y: y, w: size.x, h: size.y};
-                    }
-                    
-                    function get_hover_tile(mouse_event)
-                    {
-                        var tile_selected = false,
-                            rect;
-                        
-                        if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
-                            /// Check to see if the mouse is hovering over an already created tile.
-                            rect = get_selection_rec({x: mouse_event.clientX, y: mouse_event.clientY}, true);
-                            editor.tiles[editor.selected_tilesheet].every(function (tile, num)
-                            {
-                                if (rect.x >= tile.x && rect.x <= tile.x + tile.w && rect.y >= tile.y && rect.y <= tile.y + tile.h) {
-                                    tile_selected = {
-                                        tile: tile,
-                                        num: num
-                                    };
-                                    return false; /// I.e., break.
-                                }
-                                return true;
-                            });
-                            
-                            return tile_selected;
-                        }
-                        /// There are no tiles for this image, it cannot hover over anything.
-                        return false;
-                    }
-                    
-                    /**
                      * Draw the tile selection square or highlight a tile.
                      */
                     tilesheet_canvas.onmousemove = function (e)
@@ -1392,7 +1394,7 @@
                         function draw_square()
                         {
                             /// Get the snapped rectangle.
-                            var rect = get_selection_rec({x: e.clientX, y: e.clientY});
+                            var rect = editor.get_selection_rec(tilesheet_canvas, {x: e.clientX, y: e.clientY}, false, editor.parse_dimension(size_box.value), editor.parse_dimension(snap_box.value));
                             
                             tilesheet_canvas_cx.beginPath();
                             tilesheet_canvas_cx.lineWidth      = 1;
@@ -1407,7 +1409,7 @@
                         /// Reset the canvas.
                         editor.draw_tilesheet();
                         
-                        tile_selected = get_hover_tile(e);
+                        tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, e);
                         
                         if (tile_selected) {
                             /// Since the mouse is hovering over an already created tile, highlight it.
@@ -1423,7 +1425,7 @@
                     /// Allow users to click and drag a tile
                     tilesheet_canvas.onmousedown = function (e)
                     {
-                        var tile_selected = get_hover_tile(e);
+                        var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, e);
                         
                         if (tile_selected) {
                             editor.selected_tile = {
@@ -1446,7 +1448,7 @@
                     {
                         var ajax,
                             rect,
-                            tile_selected = get_hover_tile(e);
+                            tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, e);
                         
                         /// Did the user click on an already designated tile?
                         if (tile_selected) {
@@ -1458,7 +1460,7 @@
                             editor.change_tool("draw");
                         } else {
                             ajax = new window.XMLHttpRequest();
-                            rect = get_selection_rec({x: e.clientX, y: e.clientY});
+                            rect = editor.get_selection_rec(tilesheet_canvas, {x: e.clientX, y: e.clientY}, false, editor.parse_dimension(size_box.value), editor.parse_dimension(snap_box.value));
                             
                             ajax.open("GET", "/api?action=add_tiles&data=" + JSON.stringify({img: tilesheet_select.value, tiles: [rect]}));
                             
