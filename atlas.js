@@ -1595,21 +1595,19 @@
                     };
                 }());
                 
-                //editor.get_assets = (function ()
                 (function ()
                 {
-                    var img  = document.createElement("img"),
-                        tilesheet_select_onchange,
+                    var tilesheet_select_onchange,
                         assets_updated;
                     
                     editor.draw_tilesheet = function ()
                     {
                         /// Don't attempt to draw the image if it has not been set yet.
-                        if (img.src) {
+                        if (editor.assets.images[editor.selected_tilesheet]) {
                             /// First, clear the canvas.
                             tilesheet_canvas_cx.clearRect(0, 0, tilesheet_canvas.width, tilesheet_canvas.height);
                             /// Next, draw the image.
-                            tilesheet_canvas_cx.drawImage(img, 0, 0);
+                            tilesheet_canvas_cx.drawImage(editor.assets.images[editor.selected_tilesheet], 0, 0);
                             
                             /// Does this tilesheet have any already designated tiles in it?
                             if (editor.tiles && editor.tiles[editor.selected_tilesheet]) {
@@ -1629,20 +1627,16 @@
                         
                         return function (which)
                         {
-                            window.localStorage.setItem("selected_tilesheet", which);
-                            
                             if (which !== last_item) {
-                                last_item = which;
-                                img.onload = function ()
-                                {
-                                    tilesheet_canvas.setAttribute("width",  img.width);
-                                    tilesheet_canvas.setAttribute("height", img.height);
-                                    editor.draw_tilesheet();
-                                };
-                                
+                                window.localStorage.setItem("selected_tilesheet", which);
                                 editor.selected_tilesheet = which;
                                 
-                                img.src = "/assets/" + which;
+                                tilesheet_canvas.setAttribute("width",  editor.assets.images[editor.selected_tilesheet].width);
+                                tilesheet_canvas.setAttribute("height", editor.assets.images[editor.selected_tilesheet].height);
+                                
+                                editor.draw_tilesheet();
+                                
+                                last_item = which;
                             }
                         };
                     }());
