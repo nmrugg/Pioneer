@@ -17,7 +17,7 @@
 
 /*jslint browser: true, white: true */
 
-/*global alert */
+/*global alert, console */
 
 (function ()
 {
@@ -828,7 +828,7 @@
             return {x: x, y: y, w: size.x, h: size.y};
         };
         
-        editor.get_hover_tile = function (tilesheet_canvas, tilesheet, selected_tilesheet, mouse_event)
+        editor.get_hover_tile = function (tilesheet_canvas, tilesheet, mouse_event)
         {
             var tile_selected = false,
                 rect;
@@ -1410,7 +1410,7 @@
                         /// Reset the canvas.
                         editor.draw_tilesheet();
                         
-                        tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, editor.selected_tilesheet, e);
+                        tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, e);
                         
                         if (tile_selected) {
                             /// Since the mouse is hovering over an already created tile, highlight it.
@@ -1426,7 +1426,7 @@
                     /// Allow users to click and drag a tile
                     tilesheet_canvas.onmousedown = function (e)
                     {
-                        var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, editor.selected_tilesheet, e);
+                        var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, e);
                         
                         if (tile_selected) {
                             editor.selected_tile = {
@@ -1449,7 +1449,7 @@
                     {
                         var ajax,
                             rect,
-                            tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, editor.selected_tilesheet, e);
+                            tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, e);
                         
                         /// Did the user click on an already designated tile?
                         if (tile_selected) {
@@ -2300,7 +2300,7 @@
                     /// Reset the canvas.
                     draw_tilesheet();
                     
-                    tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_animated_tilesheet, editor.selected_tilesheet, e);
+                    tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_animated_tilesheet, e);
                     
                     if (tile_selected) {
                         /// Since the mouse is hovering over an already created tile, highlight it.
@@ -2316,7 +2316,7 @@
                 /// Allow users to click and drag a tile
                 tilesheet_canvas.onmousedown = function (e)
                 {
-                    var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_animated_tilesheet, editor.selected_tilesheet, e);
+                    var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_animated_tilesheet, e);
                     
                     if (tile_selected) {
                         console.log(tile_selected);
