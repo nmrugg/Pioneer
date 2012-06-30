@@ -125,7 +125,7 @@
                 document.body.appendChild(editor.world_map[which].container);
                 
                 ///NOTE: editor.change_map_size() triggers editor.draw_map().
-                editor.change_map_size(editor.world_map[which].size, which);
+                editor.change_map_size(editor.world_map[which].size, which, true);
                 
                 if (callback) {
                     callback();
@@ -665,7 +665,7 @@
             };
         }());
         
-        editor.change_map_size = function (size, which)
+        editor.change_map_size = function (size, which, dont_save)
         {
             var map = editor.world_map[which] || editor.cur_map;
             
@@ -725,7 +725,9 @@
                     map.data = map.data.slice(0, x_sectors);
                 }
                 
-                editor.event.trigger("map_edit");
+                if (!dont_save) {
+                    editor.event.trigger("map_edit");
+                }
             }());
         };
         
