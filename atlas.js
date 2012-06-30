@@ -2297,21 +2297,6 @@
                 {
                     var tile_selected;
                     
-                    function draw_square()
-                    {
-                        /// Get the snapped rectangle.
-                        var rect = editor.get_selection_rec(tilesheet_canvas, {x: e.clientX, y: e.clientY}, true);
-                        
-                        tilesheet_canvas_cx.beginPath();
-                        tilesheet_canvas_cx.lineWidth      = 1;
-                        tilesheet_canvas_cx.mozDash        = [3, 4];
-                        tilesheet_canvas_cx.webkitLineDash = [3, 4];
-                        tilesheet_canvas_cx.strokeStyle    = "rgba(40,300,115,.8)";
-                        
-                        tilesheet_canvas_cx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w, rect.h);
-                        tilesheet_canvas.style.cursor = "pointer";
-                    }
-                    
                     /// Reset the canvas.
                     draw_tilesheet();
                     
@@ -2321,19 +2306,21 @@
                         /// Since the mouse is hovering over an already created tile, highlight it.
                         tilesheet_canvas_cx.fillStyle = "rgba(255,255,255,.4)";
                         tilesheet_canvas_cx.fillRect(tile_selected.tile.x, tile_selected.tile.y, tile_selected.tile.w, tile_selected.tile.h);
-                        tilesheet_canvas.style.cursor = "move";
+                        tilesheet_canvas.style.cursor = "pointer";
                     } else {
                         /// The mouse is not hovering over a tile, so draw the selection rectangle.
-                        draw_square();
+                        tilesheet_canvas.style.cursor = "default";
                     }
                 };
                 
                 /// Allow users to click and drag a tile
                 tilesheet_canvas.onmousedown = function (e)
                 {
-                    var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_tilesheet, e);
+                    var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_animated_tilesheet, editor.selected_tilesheet, e);
                     
                     if (tile_selected) {
+                        console.log(tile_selected);
+                        /*
                         editor.selected_tile = {
                             tile:      tile_selected.tile,
                             tile_num:  tile_selected.num,
@@ -2341,8 +2328,8 @@
                         };
                         editor.change_tool("draw");
                         editor.dragging_tilesheet = true;
+                        */
                     }
-                    ///TODO: Let the user draw a selection rectangle.
                 };
                 
                 tabs[2].appendChild(animation_select);
