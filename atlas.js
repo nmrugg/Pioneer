@@ -1184,7 +1184,7 @@
             /**
              * Create Draw tab (tab 1)
              */
-            (function ()
+            window.setTimeout(function ()
             {
                 var hide_show_layers,
                     hide_show_checkbox  = document.createElement("input"),
@@ -1373,7 +1373,6 @@
                                     };
                                     return false; /// I.e., break.
                                 }
-                                
                                 return true;
                             });
                             
@@ -1683,7 +1682,7 @@
                         tilesheet_select_onchange();
                     }, 0);
                 }());
-            }());
+            }, 0);
             
         
             /**
@@ -2161,6 +2160,140 @@
                     }
                 };
             }()));
+            
+            /**
+             * Create tab 3 (Animations)
+             */
+            window.setTimeout(function ()
+            {
+                var animation_select = document.createElement("select"),
+                    new_button = document.createElement("input"),
+                    del_button = document.createElement("input"),
+                    speed_box  = document.createElement("input"),
+                    container_div = document.createElement("div"),
+                    tilesheet_select = document.createElement("select"),
+                    tilesheet_canvas = document.createElement("canvas"),
+                    demo_canvas = document.createElement("canvas"),
+                    
+                    tilesheet_canvas_cx,
+                    assets_updated,
+                    tilesheet_select_onchange;
+                
+                tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
+                
+                new_button.type = "button";
+                del_button.type = "button";
+                
+                new_button.value = "New Animation";
+                del_button.value = "Delete Animation";
+                
+                container_div.style.overflow = "scroll";
+                container_div.className = "canvas_container";
+                
+                tilesheet_canvas.className = "checkered";
+                
+                container_div.appendChild(tilesheet_canvas);
+                
+                demo_canvas.style.display = "none";
+                
+                ///NOTE: A delay is needed to let it get attached to the DOM.
+                window.setTimeout(function ()
+                {
+                    var cur_style = tabs[2].style.display;
+                    /// Force the current tab to be hidden so that this tab's position will not be affected by it.
+                    tabs[window.localStorage.getItem("cur_tab")].style.display = "none";
+                    /// Because elements only have offsetTop if they are displayed on the screen, we must make sure that the tab is set to block (even though the user never sees anything unusual).
+                    tabs[2].style.display = "block";
+                    /// Set the top to the current position and bottom to the bottom of the parent div.
+                    container_div.style.top = container_div.offsetTop + "px";
+                    container_div.style.bottom = 0;
+                    tabs[2].style.display = cur_style;
+                    /// Make sure that the current tab is visible.
+                    tabs[window.localStorage.getItem("cur_tab")].style.display = "block";
+                }, 0);
+                
+                tilesheet_select_onchange = (function ()
+                {
+                    var last_item;
+                    
+                    return function (which)
+                    {
+                        if (typeof which === "undefined") {
+                            which = tilesheet_select.value;
+                        }
+                        
+                        if (which !== last_item) {
+                            window.localStorage.setItem("selected_animated_tilesheet", which);
+                            editor.selected_animated_tilesheet = which;
+                            
+                            tilesheet_canvas.setAttribute("width",  editor.assets.images[editor.selected_animated_tilesheet].width);
+                            tilesheet_canvas.setAttribute("height", editor.assets.images[editor.selected_animated_tilesheet].height);
+                            
+                            /// Don't attempt to draw the image if it has not been set yet.
+                            if (editor.assets.images[editor.selected_animated_tilesheet]) {
+                                /// First, clear the canvas.
+                                tilesheet_canvas_cx.clearRect(0, 0, tilesheet_canvas.width, tilesheet_canvas.height);
+                                /// Next, draw the image.
+                                tilesheet_canvas_cx.drawImage(editor.assets.images[editor.selected_animated_tilesheet], 0, 0);
+                                
+                                /// Does this tilesheet have any already designated tiles in it?
+                                if (editor.tiles && editor.tiles[editor.selected_animated_tilesheet]) {
+                                    tilesheet_canvas_cx.fillStyle = "rgba(0,0,0,.3)";
+                                    /// Now, draw a dark rectangle for each tile that is already made.
+                                    editor.tiles[editor.selected_animated_tilesheet].forEach(function (tile)
+                                    {
+                                        tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
+                                    });
+                                }
+                            }
+                            
+                            last_item = which;
+                        }
+                    };
+                }());
+                
+                tilesheet_select.onchange = function ()
+                {
+                    tilesheet_select_onchange();
+                };
+                
+                tilesheet_select.onkeyup = function ()
+                {
+                    tilesheet_select_onchange();
+                };
+                
+                assets_updated = function ()
+                {
+                    tilesheet_select.options.length = 0;
+                    
+                    if (editor.assets && editor.assets.names) {
+                        editor.assets.names.forEach(function (asset)
+                        {
+                            ///NOTE: new Option(text, value, default_selected, selected);
+                            tilesheet_select.options[tilesheet_select.options.length] = new Option(asset, asset, false, (asset === editor.selected_animated_tilesheet));
+                        });
+                        tilesheet_select_onchange();
+                    }
+                };
+                
+                editor.event.attach("load_assets", assets_updated);
+                
+                window.setTimeout(assets_updated, 0);
+                
+                tabs[2].appendChild(animation_select);
+                tabs[2].appendChild(document.createElement("br"));
+                tabs[2].appendChild(new_button);
+                tabs[2].appendChild(document.createTextNode(" "));
+                tabs[2].appendChild(del_button);
+                tabs[2].appendChild(document.createElement("br"));
+                tabs[2].appendChild(document.createTextNode("Speed (1-10): "));
+                tabs[2].appendChild(speed_box);
+                tabs[2].appendChild(document.createElement("br"));
+                tabs[2].appendChild(tilesheet_select);
+                tabs[2].appendChild(document.createElement("br"));
+                tabs[2].appendChild(demo_canvas);
+                tabs[2].appendChild(container_div);
+            }, 0);
         };
     }
     
