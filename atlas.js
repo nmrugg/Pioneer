@@ -2280,6 +2280,7 @@
                 
                 editor.event.attach("load_assets", assets_updated);
                 
+                editor.selected_animated_tilesheet = window.localStorage.getItem("selected_animated_tilesheet");
                 window.setTimeout(assets_updated, 0);
                 
                 tabs[2].appendChild(animation_select);
