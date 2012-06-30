@@ -415,8 +415,8 @@
                         editor.assets.images[asset] = document.createElement("img");
                         editor.assets.images[asset].onerror = function ()
                         {
-                            console.log("error");
-                            download_assets(i + 1);
+                            console.log(this.src);
+                            this.src = this.src + "?" + Math.random();
                         };
                         editor.assets.images[asset].onload = function ()
                         {
