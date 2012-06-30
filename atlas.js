@@ -2182,7 +2182,9 @@
                     draw_tilesheet,
                     tilesheet_canvas_cx,
                     assets_updated,
-                    tilesheet_select_onchange;
+                    tilesheet_select_onchange,
+                    
+                    cur_animation = {tiles: []};
                 
                 tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
                 
@@ -2322,16 +2324,12 @@
                     var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_animated_tilesheet, e);
                     
                     if (tile_selected) {
-                        console.log(tile_selected);
-                        /*
-                        editor.selected_tile = {
-                            tile:      tile_selected.tile,
-                            tile_num:  tile_selected.num,
-                            tilesheet: editor.selected_tilesheet
-                        };
-                        editor.change_tool("draw");
-                        editor.dragging_tilesheet = true;
-                        */
+                        if (!cur_animation.asset) {
+                            cur_animation.asset = editor.selected_animated_tilesheet;
+                        }
+                        cur_animation.tiles[cur_animation.tiles.length] = tile_selected.num;
+                        ///TODO: Update demo.
+                        console.log(cur_animation);
                     }
                 };
                 
