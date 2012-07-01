@@ -2184,7 +2184,10 @@
                     assets_updated,
                     tilesheet_select_onchange,
                     
-                    cur_animation = {tiles: []};
+                    cur_animation = {tiles: []},
+                    demo_size,
+                    tilesheet_canvas_top,
+                    demo_timer;
                 
                 tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
                 
@@ -2205,6 +2208,14 @@
                 
                 demo_canvas.style.display = "none";
                 
+                function display_demo()
+                {
+                    demo_canvas.setAttribute("width",  demo_size.w);
+                    demo_canvas.setAttribute("height", demo_size.h);
+                    container_div.style.top = (tilesheet_canvas_top + demo_size.h) + "px";
+                    demo_canvas.style.display = "block";
+                }
+                
                 ///NOTE: A delay is needed to let it get attached to the DOM.
                 window.setTimeout(function ()
                 {
@@ -2215,6 +2226,7 @@
                     tabs[2].style.display = "block";
                     /// Set the top to the current position and bottom to the bottom of the parent div.
                     container_div.style.top = container_div.offsetTop + "px";
+                    tilesheet_canvas_top = container_div.offsetTop;
                     container_div.style.bottom = 0;
                     tabs[2].style.display = cur_style;
                     /// Make sure that the current tab is visible.
@@ -2326,12 +2338,17 @@
                     if (tile_selected) {
                         if (!cur_animation.asset) {
                             cur_animation.asset = editor.selected_animated_tilesheet;
+                            demo_size = {w: tile_selected.w, h: tile_selected.h};
+                            display_demo();
                         }
                         cur_animation.tiles[cur_animation.tiles.length] = tile_selected.num;
-                        ///TODO: Update demo.
-                        console.log(cur_animation);
                     }
                 };
+                
+                demo_timer = window.setInterval(function ()
+                {
+                    //document.title = Date.now() % 100;
+                }, 1);
                 
                 tabs[2].appendChild(animation_select);
                 tabs[2].appendChild(document.createElement("br"));
