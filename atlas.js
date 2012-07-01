@@ -474,7 +474,6 @@
                     ///     t: tile_id
                     ///     x: x
                     ///     y: y
-                    
                     for (i = sector.length - 1; i >= 0; i -= 1) {
                         tile = sector[i];
                         base_tile = editor.tiles[map.assets[tile.a]][tile.t];
@@ -853,6 +852,67 @@
             /// There are no tiles for this image, it cannot hover over anything.
             return false;
         };
+        
+        editor.animation = (function()
+        {
+            var animations = [],
+                animations_len = [],
+                interval,
+                last_time = Date.now();
+            
+            interval = window.setInterval(function ()
+            {
+                var animation,
+                    i,
+                    map_num = editor.selected_map,
+                    since,
+                    tenths,
+                    tile,
+                    time = Date.now();
+                
+                since = Date.now() - last_time;
+                
+                if (since > 100 && editor.cur_map.loaded) {
+                    tenths = Math.round(since / 100);
+                    
+                    for (i = animations_len[map_num] - 1; i >= 0; i += 1) {
+                        animation = animations[map_num][i];
+                        animation.time += tenths;
+                        if (animation.time > animation.delay) {
+                            animation.cur_frame += 1;
+                            if (animation.cur_frame > animation.frames_len) {
+                                animation.cur_frame = 0;
+                            }
+                            
+                            tile = editor.tiles[animation.obj.asset][animation.obj.frames[animation.cur_frame]];
+                            map.canvases[animation.obj.l].cx.clearRect(animation.obj.pos.x, animation.obj.pos.y, tile.w, tile.h);
+                            map.canvases[animation.obj.l].cx.drawImage(editor.assets.images[animation.obj.asset], animation.obj.pos.x, animation.obj.pos.y, tile.w, tile.h, tile.x, tile.y, tile.w, tile.h);
+                            
+                            animation.time = 0;
+                        }
+                    }
+                    last_time = time;
+                }
+            }, 20);
+            
+            return {
+                attach: function (obj, map_num)
+                {
+                    /*
+                    Object.defineProperty(obj, "cur_frame", {writable: true, value: 0});
+                    Object.defineProperty(obj, "time", {writable: true, value: 0});
+                    Object.defineProperty(obj, "canvas", {value: canvas});
+                    */
+                    
+                    if (!animations[map_num]) {
+                        animations[map_num] = [];
+                        animations_len[map_num] = 0;
+                    }
+                    animations[map_num][animations.length] = {obj: obj, cur_frame: 0, time: 0};
+                    animations_len[map_num] += 1;
+                }
+            };
+        }());
         
         editor.load_panel = function ()
         {
@@ -2345,11 +2405,22 @@
                     }
                 };
                 
-                demo_timer = window.setInterval(function ()
+                /*
+                demo_timer = (function ()
                 {
-                    //document.title = Date.now() % 100;
-                }, 1);
-                
+                    var last_tenth;
+                    
+                    return window.setInterval(function ()
+                    {
+                        var tenth = Math.floor((Date.now() % 1000) / 100);
+                        
+                        if (tenth !== last_tenth) {
+                            document.title = tenth;
+                            last_tenth = tenth;
+                        }
+                    }, 20);
+                }());
+                */
                 tabs[2].appendChild(animation_select);
                 tabs[2].appendChild(document.createElement("br"));
                 tabs[2].appendChild(new_button);
@@ -2358,7 +2429,7 @@
                 tabs[2].appendChild(document.createTextNode(" "));
                 tabs[2].appendChild(del_button);
                 tabs[2].appendChild(document.createElement("br"));
-                tabs[2].appendChild(document.createTextNode("Speed (1-10): "));
+                tabs[2].appendChild(document.createTextNode("Delay: "));
                 tabs[2].appendChild(speed_box);
                 tabs[2].appendChild(document.createElement("br"));
                 tabs[2].appendChild(tilesheet_select);
