@@ -2368,8 +2368,17 @@
                         if (editor.tiles && editor.tiles[editor.selected_animated_tilesheet]) {
                             tilesheet_canvas_cx.fillStyle = "rgba(0,0,0,.3)";
                             /// Now, draw a dark rectangle for each tile that is already made.
-                            editor.tiles[editor.selected_animated_tilesheet].forEach(function (tile)
+                            editor.tiles[editor.selected_animated_tilesheet].forEach(function (tile, i)
                             {
+                                if (cur_animation.frames.indexOf(i) === -1) {
+                                    tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
+                                }
+                            });
+                            tilesheet_canvas_cx.fillStyle = "rgba(255,255,255,.4)";
+                            /// Now, draw a dark rectangle for each tile that is already made.
+                            cur_animation.frames.forEach(function (i)
+                            {
+                                var tile = editor.tiles[editor.selected_animated_tilesheet][i];
                                 tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
                             });
                         }
