@@ -853,7 +853,7 @@
             return false;
         };
         
-        editor.animation = (function()
+        editor.animation = (function ()
         {
             var animations = [],
                 animations_len = [],
@@ -898,12 +898,6 @@
             return {
                 attach: function (obj, map_num)
                 {
-                    /*
-                    Object.defineProperty(obj, "cur_frame", {writable: true, value: 0});
-                    Object.defineProperty(obj, "time", {writable: true, value: 0});
-                    Object.defineProperty(obj, "canvas", {value: canvas});
-                    */
-                    
                     if (!animations[map_num]) {
                         animations[map_num] = [];
                         animations_len[map_num] = 0;
@@ -913,6 +907,71 @@
                 }
             };
         }());
+        
+        editor.do_animation = function (animation_obj, pos, cx, repeat, callback)
+        {
+            var cur_frame = -1,
+                interval,
+                last_time = Date.now(),
+                waiting = 0;
+            
+            interval = window.setInterval(function ()
+            {
+                var since,
+                    tile,
+                    time = Date.now();
+                
+                since = Date.now() - last_time;
+                
+                /// Stop if there is no asset.
+                if (!animation_obj.asset) {
+                    return;
+                }
+                
+                if (since > 100 && editor.cur_tab === 2) {
+                    waiting += Math.round(since / 100);
+                    
+                    if (waiting >= animation_obj.delay) {
+                        cur_frame += 1;
+                        
+                        if (cur_frame >= animation_obj.frames.length) {
+                            if (!repeat) {
+                                if (callback) {
+                                    callback();
+                                }
+                                window.clearInterval(interval);
+                                return;
+                            }
+                            cur_frame = 0;
+                        }
+                        /*
+                        console.log(editor.tiles[animation_obj.asset]);
+                        console.log(animation_obj.frames[cur_frame]);
+                        console.log(cur_frame);
+                        console.log(editor.tiles[animation_obj.asset][animation_obj.frames[cur_frame]]);
+                        debugger;
+                        */
+                        tile = editor.tiles[animation_obj.asset][animation_obj.frames[cur_frame]];
+                        cx.clearRect(pos.x, pos.y, tile.w, tile.h);
+                        cx.drawImage(editor.assets.images[animation_obj.asset], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
+                        
+                        waiting = 0;
+                    }
+                    last_time = time;
+                }
+            }, 20);
+            
+            return {
+                stop: function (skip_callback)
+                {
+                    window.clearInterval(interval);
+                    if (!skip_callback && callback) {
+                        callback();
+                    }
+                }
+            };
+        };
+        
         
         editor.load_panel = function ()
         {
@@ -939,17 +998,16 @@
                  */
                 (function ()
                 {
-                    var cur_tab,
-                        create_tab,
+                    var create_tab,
                         tab_container = document.createElement("div"),
                         ul = document.createElement("ul");
                     
                     if (/\#tab-\d+/.test(window.location.hash)) {
-                        cur_tab = Number(/\#tab-(\d+)/.exec(window.location.hash)[1]);
+                        editor.cur_tab = Number(/\#tab-(\d+)/.exec(window.location.hash)[1]);
                     } else if (window.localStorage.getItem("cur_tab")) {
-                        cur_tab = Number(window.localStorage.getItem("cur_tab"));
+                        editor.cur_tab = Number(window.localStorage.getItem("cur_tab"));
                     } else {
-                        cur_tab = 0;
+                        editor.cur_tab = 0;
                     }
                     
                     tab_container.id = "tabs";
@@ -978,19 +1036,19 @@
                                     var old_el,
                                         old_tab;
                                     
-                                    if (cur_tab !== this_tab) {
-                                        old_el = document.getElementById("tab-" + cur_tab);
-                                        old_tab = cur_tab;
+                                    if (editor.cur_tab !== this_tab) {
+                                        old_el = document.getElementById("tab-" + editor.cur_tab);
+                                        old_tab = editor.cur_tab;
                                         if (old_el) {
                                             old_el.style.display = "none";
-                                            document.getElementById("a_tab-" + cur_tab).classList.remove("active-tab");
+                                            document.getElementById("a_tab-" + editor.cur_tab).classList.remove("active-tab");
                                         }
                                         tab.style.display = "block";
                                         a.classList.add("active-tab");
-                                        cur_tab = this_tab;
-                                        window.localStorage.setItem("cur_tab", cur_tab);
+                                        editor.cur_tab = this_tab;
+                                        window.localStorage.setItem("cur_tab", editor.cur_tab);
                                         
-                                        editor.event.trigger("tab_change", {cur_tab: cur_tab, old_tab: old_tab});
+                                        editor.event.trigger("tab_change", {cur_tab: editor.cur_tab, old_tab: old_tab});
                                     }
                                     
                                     e.preventDefault();
@@ -1008,13 +1066,13 @@
                             
                             tab.id = "tab-" + tabs;
                             
-                            if (tabs === cur_tab) {
+                            if (tabs === editor.cur_tab) {
                                 tab.style.display = "block";
                                 a.classList.add("active-tab");
-                                window.localStorage.setItem("cur_tab", cur_tab);
+                                window.localStorage.setItem("cur_tab", editor.cur_tab);
                                 window.setTimeout(function ()
                                 {
-                                    editor.event.trigger("tab_change", {cur_tab: cur_tab});
+                                    editor.event.trigger("tab_change", {cur_tab: editor.cur_tab});
                                 }, 0);
                             } else {
                                 tab.style.display = "none";
@@ -1099,7 +1157,7 @@
                     }, 750);
                 });
                 
-                create_level_options = function()
+                create_level_options = function ()
                 {
                     var add_el    = document.createElement("input"),
                         change_el = document.createElement("input"),
@@ -2233,21 +2291,22 @@
                     new_button  = document.createElement("input"),
                     del_button  = document.createElement("input"),
                     save_button = document.createElement("input"),
-                    speed_box  = document.createElement("input"),
+                    delay_box  = document.createElement("input"),
                     container_div = document.createElement("div"),
                     tilesheet_select = document.createElement("select"),
                     tilesheet_canvas = document.createElement("canvas"),
                     demo_canvas = document.createElement("canvas"),
                     
                     draw_tilesheet,
+                    ondelay_change,
                     tilesheet_canvas_cx,
                     assets_updated,
                     tilesheet_select_onchange,
                     
-                    cur_animation = {tiles: []},
+                    cur_frame = 0,
+                    cur_animation = {frames: []},
                     demo_size,
-                    tilesheet_canvas_top,
-                    demo_timer;
+                    tilesheet_canvas_top;
                 
                 tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
                 
@@ -2398,29 +2457,31 @@
                     if (tile_selected) {
                         if (!cur_animation.asset) {
                             cur_animation.asset = editor.selected_animated_tilesheet;
-                            demo_size = {w: tile_selected.w, h: tile_selected.h};
+                            //debugger;
+                            demo_size = {w: tile_selected.tile.w, h: tile_selected.tile.h};
                             display_demo();
                         }
-                        cur_animation.tiles[cur_animation.tiles.length] = tile_selected.num;
+                        cur_animation.frames[cur_animation.frames.length] = tile_selected.num;
                     }
                 };
                 
-                /*
-                demo_timer = (function ()
+                
+                ondelay_change = function ()
                 {
-                    var last_tenth;
-                    
-                    return window.setInterval(function ()
-                    {
-                        var tenth = Math.floor((Date.now() % 1000) / 100);
-                        
-                        if (tenth !== last_tenth) {
-                            document.title = tenth;
-                            last_tenth = tenth;
-                        }
-                    }, 20);
-                }());
-                */
+                    cur_animation.delay = Number(delay_box.value);
+                    if (isNaN(cur_animation.delay)) {
+                        cur_animation.delay = 1;
+                    }
+                };
+                
+                delay_box.onchange = ondelay_change;
+                delay_box.onkeyup = ondelay_change;
+                
+                delay_box.value = 1;
+                cur_animation.delay = 1;
+                
+                editor.do_animation(cur_animation, {x: 0, y: 0}, demo_canvas.getContext("2d"), true);
+                
                 tabs[2].appendChild(animation_select);
                 tabs[2].appendChild(document.createElement("br"));
                 tabs[2].appendChild(new_button);
@@ -2430,7 +2491,7 @@
                 tabs[2].appendChild(del_button);
                 tabs[2].appendChild(document.createElement("br"));
                 tabs[2].appendChild(document.createTextNode("Delay: "));
-                tabs[2].appendChild(speed_box);
+                tabs[2].appendChild(delay_box);
                 tabs[2].appendChild(document.createElement("br"));
                 tabs[2].appendChild(tilesheet_select);
                 tabs[2].appendChild(document.createElement("br"));
