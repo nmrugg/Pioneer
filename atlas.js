@@ -2467,11 +2467,11 @@
                     if (tile_selected) {
                         if (!cur_animation.asset) {
                             cur_animation.asset = editor.selected_animated_tilesheet;
-                            //debugger;
                             demo_size = {w: tile_selected.tile.w, h: tile_selected.tile.h};
                             display_demo();
                         }
                         cur_animation.frames[cur_animation.frames.length] = tile_selected.num;
+                        draw_tilesheet();
                     }
                 };
                 
@@ -2485,7 +2485,20 @@
                 };
                 
                 delay_box.onchange = ondelay_change;
-                delay_box.onkeyup = ondelay_change;
+                delay_box.onkeyup  = ondelay_change;
+                
+                new_button.onclick = function ()
+                {
+                    cur_animation.frames = [];
+                    delete cur_animation.asset;
+                    ondelay_change();
+                    
+                    demo_canvas.setAttribute("width",  0);
+                    demo_canvas.setAttribute("height", 0);
+                    container_div.style.top = tilesheet_canvas_top + "px";
+                    demo_canvas.style.display = "none";
+                    draw_tilesheet();
+                };
                 
                 delay_box.value = 1;
                 cur_animation.delay = 1;
