@@ -2322,6 +2322,7 @@
                 container_div.className = "canvas_container";
                 
                 tilesheet_canvas.className = "checkered";
+                demo_canvas.className = "checkered";
                 
                 container_div.appendChild(tilesheet_canvas);
                 
