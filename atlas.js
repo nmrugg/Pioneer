@@ -2574,7 +2574,14 @@
                     draw_tilesheet();
                 };
                 
-                new_button.onclick = editor.reset_demo_animation;
+                new_button.onclick = function ()
+                {
+                    if (typeof selected_animation === "undefined" && cur_animation.frames.length > 0 && !confirm("Are you sure you want to discard the changes?")) {
+                        return;
+                    }
+                    
+                    editor.reset_demo_animation();
+                };
                 
                 save_animation = function (animation_name, animation)
                 {
