@@ -35,6 +35,43 @@ function array_remove(array, from, to)
     return array.push.apply(array, rest);
 }
 
+function get_animations(response)
+{
+    response.writeHead(200, {"Content-Type": "application/json"});
+    fs.readFile("data/animations.json", "utf8", function (err, animations)
+    {
+        if (!animations) {
+            animations = "{}";
+        }
+        
+        response.end(animations);
+    });
+}
+
+function save_animation(response, data)
+{
+    response.writeHead(200, {"Content-Type": "text/plain"});
+    fs.readFile("data/animations.json", "utf8", function (err, animations)
+    {
+        if (animations) {
+            try {
+                animations = JSON.parse(animations);
+            } catch (e) {}
+        } else {
+            animations = {};
+        }
+        
+        if (typeof data.name !== "undefined" && data.data) {
+            animations[data.name] = data.data;
+            
+            ///NOTE: To avoid race conditions, write this file synchronously.
+            fs.writeFileSync("data/animations.json", JSON.stringify(animations), "utf8");
+        }
+        
+        response.end(JSON.stringify(animations));
+    });
+}
+
 function get_map(response, data)
 {
     response.writeHead(200, {"Content-Type": "application/json"});
@@ -43,7 +80,7 @@ function get_map(response, data)
         var map;
         
         if (!maps) {
-            tiles = "[]";
+            maps = "[]";
         }
         
         try {
@@ -204,6 +241,12 @@ function run_api(action, response, data)
         return;
     case "get_map":
         get_map(response, data)
+        return;
+    case "save_animation":
+        save_animation(response, data)
+        return;
+    case "get_animations":
+        get_animations(response)
         return;
     }
     /// If the action is not valid, simply end.

@@ -151,12 +151,15 @@
                 ///TODO: Just get the tiles that are needed.
                 editor.get_tiles(function ()
                 {
-                    ///TODO: Just get the assets that are needed.
-                    editor.get_assets(function () {
-                        editor.draw_map(editor.selected_map, null, function ()
-                        {
-                            editor.cur_map.loaded = true;
-                            editor.load_panel();
+                    editor.get_animations(function ()
+                    {
+                        ///TODO: Just get the assets that are needed.
+                        editor.get_assets(function () {
+                            editor.draw_map(editor.selected_map, null, function ()
+                            {
+                                editor.cur_map.loaded = true;
+                                editor.load_panel();
+                            });
                         });
                     });
                 });
@@ -435,6 +438,25 @@
                 };
                 
                 download_assets(0);
+            });
+            
+            ajax.send();
+        };
+        
+        editor.get_animations = function (callback)
+        {
+            var ajax = new window.XMLHttpRequest();
+            ajax.open("GET", "/api?action=get_animations");
+            
+            ajax.addEventListener("load", function ()
+            {
+                editor.animations = {};
+                
+                try {
+                    editor.animations = JSON.parse(ajax.responseText);
+                } catch (e) {}
+                
+                callback();
             });
             
             ajax.send();
@@ -932,9 +954,9 @@
                     waiting += Math.round(since / 100);
                     
                     if (waiting >= animation_obj.delay) {
-                        cur_frame += 1;
+                        //cur_frame += 1;
                         
-                        if (cur_frame >= animation_obj.frames.length) {
+                        if (cur_frame + 1 >= animation_obj.frames.length) {
                             if (!repeat) {
                                 if (callback) {
                                     callback();
@@ -942,7 +964,10 @@
                                 window.clearInterval(interval);
                                 return;
                             }
+                            
                             cur_frame = 0;
+                        } else {
+                            cur_frame += 1;
                         }
                         /*
                         console.log(editor.tiles[animation_obj.asset]);
@@ -2297,12 +2322,14 @@
                     tilesheet_canvas = document.createElement("canvas"),
                     demo_canvas = document.createElement("canvas"),
                     
+                    save_animation,
                     draw_tilesheet,
                     ondelay_change,
                     tilesheet_canvas_cx,
                     assets_updated,
                     tilesheet_select_onchange,
                     
+                    selected_animation,
                     cur_frame = 0,
                     cur_animation = {frames: []},
                     demo_size,
@@ -2335,6 +2362,18 @@
                     container_div.style.top = (tilesheet_canvas_top + demo_size.h) + "px";
                     demo_canvas.style.display = "block";
                 }
+                
+                function load_animations()
+                {
+                    animation_select.options.length = 0;
+                    if (editor.animations) {
+                        Object.keys(editor.animations).sort().forEach(function (animation_name)
+                        {
+                            ///NOTE: new Option(text, value, default_selected, selected);
+                            animation_select.options[animation_select.options.length] = new Option(animation_name, animation_name, false, (animation_name === selected_animation));
+                        });
+                    }
+                };
                 
                 ///NOTE: A delay is needed to let it get attached to the DOM.
                 window.setTimeout(function ()
@@ -2400,7 +2439,8 @@
                             window.localStorage.setItem("selected_animated_tilesheet", which);
                             editor.selected_animated_tilesheet = which;
                             
-                            draw_tilesheet();
+                            ///NOTE: This will also redraw the tilesheet.
+                            editor.reset_demo_animation();
                             
                             last_item = which;
                         }
@@ -2487,7 +2527,8 @@
                 delay_box.onchange = ondelay_change;
                 delay_box.onkeyup  = ondelay_change;
                 
-                new_button.onclick = function ()
+                
+                editor.reset_demo_animation = function ()
                 {
                     cur_animation.frames = [];
                     delete cur_animation.asset;
@@ -2497,8 +2538,48 @@
                     demo_canvas.setAttribute("height", 0);
                     container_div.style.top = tilesheet_canvas_top + "px";
                     demo_canvas.style.display = "none";
+                    selected_animation = undefined;
                     draw_tilesheet();
                 };
+                
+                new_button.onclick = editor.reset_demo_animation;
+                
+                save_animation = function (animation_name, animation)
+                {
+                    var ajax = new window.XMLHttpRequest();
+                    
+                    ajax.open("POST", "/api");
+                    
+                    ajax.addEventListener("load", function ()
+                    {
+                        var animations = [];
+                        
+                        try {
+                            animations = JSON.parse(ajax.responseText);
+                        } catch (e) {}
+                        
+                        editor.animations = animations;
+                        load_animations();
+                    });
+                    
+                    ajax.send("action=save_animation&data=" + JSON.stringify({data: animation, name: animation_name}));
+                };
+                
+                save_button.onclick = function ()
+                {
+                    var animation_name;
+                    
+                    if (!selected_animation) {
+                        animation_name = prompt("Enter animation name:");
+                        
+                        if (animation_name === null) {
+                            return;
+                        }
+                    }
+                    save_animation(animation_name, cur_animation);
+                };
+                
+                load_animations();
                 
                 delay_box.value = 1;
                 cur_animation.delay = 1;
