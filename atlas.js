@@ -2322,6 +2322,7 @@
                     tilesheet_canvas = document.createElement("canvas"),
                     demo_canvas = document.createElement("canvas"),
                     
+                    animation_select_change,
                     save_animation,
                     draw_tilesheet,
                     ondelay_change,
@@ -2366,12 +2367,39 @@
                 function load_animations()
                 {
                     animation_select.options.length = 0;
+                    
+                    animation_select.options[0] = new Option("(new)", "", false, false);
+                    
                     if (editor.animations) {
                         Object.keys(editor.animations).sort().forEach(function (animation_name)
                         {
                             ///NOTE: new Option(text, value, default_selected, selected);
                             animation_select.options[animation_select.options.length] = new Option(animation_name, animation_name, false, (animation_name === selected_animation));
                         });
+                    }
+                };
+                
+                animation_select_change = function ()
+                {
+                    var animation,
+                        tile;
+                    
+                    animation = editor.animations[animation_select.value];
+                    
+                    if (animation_select.value !== "" && animation) {
+                        cur_animation.frames = animation.frames;
+                        cur_animation.asset = animation.asset;
+                        cur_animation.delay = animation.delay;
+                        delay_box.value = animation.delay;
+                        
+                        tile = editor.tiles[animation.asset][0];
+                        
+                        demo_size = {w: tile.w, h: tile.h};
+                        
+                        editor.selected_animated_tilesheet = animation.asset;
+                         
+                        display_demo();
+                        draw_tilesheet();
                     }
                 };
                 
@@ -2539,6 +2567,7 @@
                     container_div.style.top = tilesheet_canvas_top + "px";
                     demo_canvas.style.display = "none";
                     selected_animation = undefined;
+                    animation_select.selectedIndex = 0;
                     draw_tilesheet();
                 };
                 
@@ -2572,12 +2601,15 @@
                     if (!selected_animation) {
                         animation_name = prompt("Enter animation name:");
                         
-                        if (animation_name === null) {
+                        if (animation_name === null || animation_name.trim() === "") {
                             return;
                         }
                     }
                     save_animation(animation_name, cur_animation);
                 };
+                
+                animation_select.onchange = animation_select_change;
+                animation_select.onkeyup = animation_select_change;
                 
                 load_animations();
                 
