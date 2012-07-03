@@ -946,7 +946,7 @@
                 since = Date.now() - last_time;
                 
                 /// Stop if there is no asset.
-                if (!animation_obj.asset) {
+                if (!animation_obj.asset || animation_obj.frames.length === 0) {
                     return;
                 }
                 
@@ -954,7 +954,6 @@
                     waiting += Math.round(since / 100);
                     
                     if (waiting >= animation_obj.delay) {
-                        //cur_frame += 1;
                         
                         if (cur_frame + 1 >= animation_obj.frames.length) {
                             if (!repeat) {
@@ -969,13 +968,7 @@
                         } else {
                             cur_frame += 1;
                         }
-                        /*
-                        console.log(editor.tiles[animation_obj.asset]);
-                        console.log(animation_obj.frames[cur_frame]);
-                        console.log(cur_frame);
-                        console.log(editor.tiles[animation_obj.asset][animation_obj.frames[cur_frame]]);
-                        debugger;
-                        */
+                        
                         tile = editor.tiles[animation_obj.asset][animation_obj.frames[cur_frame]];
                         cx.clearRect(pos.x, pos.y, tile.w, tile.h);
                         cx.drawImage(editor.assets.images[animation_obj.asset], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
@@ -2316,6 +2309,7 @@
                     new_button  = document.createElement("input"),
                     del_button  = document.createElement("input"),
                     save_button = document.createElement("input"),
+                    rem_button = document.createElement("input"),
                     delay_box  = document.createElement("input"),
                     container_div = document.createElement("div"),
                     tilesheet_select = document.createElement("select"),
@@ -2341,10 +2335,12 @@
                 new_button.type  = "button";
                 del_button.type  = "button";
                 save_button.type = "button";
+                rem_button.type = "button";
                 
                 new_button.value  = "New";
                 del_button.value  = "Delete";
                 save_button.value = "Save";
+                rem_button.value = "Remove Frame";
                 
                 container_div.style.overflow = "scroll";
                 container_div.className = "canvas_container";
@@ -2588,7 +2584,7 @@
                     
                     ajax.addEventListener("load", function ()
                     {
-                        var animations = [];
+                        var animations = {};
                         
                         try {
                             animations = JSON.parse(ajax.responseText);
@@ -2618,6 +2614,39 @@
                     save_animation(selected_animation, cur_animation);
                 };
                 
+                rem_button.onclick = function ()
+                {
+                    if (cur_animation.frames.length > 0) {
+                        cur_animation.frames.pop();
+                        draw_tilesheet();
+                    }
+                };
+                
+                del_button.onclick = function ()
+                {
+                    var ajax;
+                    
+                    if (confirm("Do you really want to delete \"" + selected_animation + "\"?")) {
+                        ajax = new window.XMLHttpRequest();
+                        ajax.open("POST", "/api");
+                        
+                        ajax.addEventListener("load", function ()
+                        {
+                            var animations = {};
+                            
+                            try {
+                                animations = JSON.parse(ajax.responseText);
+                            } catch (e) {}
+                            
+                            editor.animations = animations;
+                            load_animations();
+                        });
+                        
+                        ajax.send("action=del_animation&data=" + JSON.stringify({name: selected_animation}));
+                        selected_animation = undefined;
+                    }
+                };
+                
                 animation_select.onchange = animation_select_change;
                 animation_select.onkeyup = animation_select_change;
                 
@@ -2635,6 +2664,8 @@
                 tabs[2].appendChild(save_button);
                 tabs[2].appendChild(document.createTextNode(" "));
                 tabs[2].appendChild(del_button);
+                tabs[2].appendChild(document.createTextNode(" "));
+                tabs[2].appendChild(rem_button);
                 tabs[2].appendChild(document.createElement("br"));
                 tabs[2].appendChild(document.createTextNode("Delay: "));
                 tabs[2].appendChild(delay_box);

@@ -35,6 +35,35 @@ function array_remove(array, from, to)
     return array.push.apply(array, rest);
 }
 
+function del_animations(response, data)
+{
+    response.writeHead(200, {"Content-Type": "text/plain"});
+    fs.readFile("data/animations.json", "utf8", function (err, animations)
+    {
+        if (animations) {
+            try {
+                animations = JSON.parse(animations);
+            } catch (e) {}
+        } else {
+            animations = {};
+        }
+        
+        if (data && typeof data.name !== "undefined") {
+            console.log(data.name);
+            console.log(animations);
+            if (animations[data.name]) {
+                delete animations[data.name];
+            }
+            console.log(animations);
+            
+            ///NOTE: To avoid race conditions, write this file synchronously.
+            fs.writeFileSync("data/animations.json", JSON.stringify(animations), "utf8");
+        }
+        
+        response.end(JSON.stringify(animations));
+    });
+}
+
 function get_animations(response)
 {
     response.writeHead(200, {"Content-Type": "application/json"});
@@ -61,7 +90,7 @@ function save_animation(response, data)
             animations = {};
         }
         
-        if (typeof data.name !== "undefined" && data.data) {
+        if (data && typeof data.name !== "undefined" && data.data) {
             animations[data.name] = data.data;
             
             ///NOTE: To avoid race conditions, write this file synchronously.
@@ -247,6 +276,9 @@ function run_api(action, response, data)
         return;
     case "get_animations":
         get_animations(response)
+        return;
+    case "del_animation":
+        del_animations(response, data)
         return;
     }
     /// If the action is not valid, simply end.
