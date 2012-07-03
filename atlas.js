@@ -2397,9 +2397,12 @@
                         demo_size = {w: tile.w, h: tile.h};
                         
                         editor.selected_animated_tilesheet = animation.asset;
+                        selected_animation = animation_select.value;
                          
                         display_demo();
                         draw_tilesheet();
+                    } else {
+                        selected_animation = undefined;
                     }
                 };
                 
@@ -2422,6 +2425,10 @@
                 
                 draw_tilesheet = function ()
                 {
+                    if (!editor.assets.images[editor.selected_animated_tilesheet]) {
+                        return;
+                    }
+                    
                     tilesheet_canvas.setAttribute("width",  editor.assets.images[editor.selected_animated_tilesheet].width);
                     tilesheet_canvas.setAttribute("height", editor.assets.images[editor.selected_animated_tilesheet].height);
                     
@@ -2604,8 +2611,11 @@
                         if (animation_name === null || animation_name.trim() === "") {
                             return;
                         }
+                        selected_animation = animation_name;
+                    } else if (!confirm("Are you sure you want to save over \"" + selected_animation + "\"?\n\n(If not, select \"(new)\" in the animation drop down box.)")) {
+                        return;
                     }
-                    save_animation(animation_name, cur_animation);
+                    save_animation(selected_animation, cur_animation);
                 };
                 
                 animation_select.onchange = animation_select_change;
