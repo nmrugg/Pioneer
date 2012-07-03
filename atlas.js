@@ -752,6 +752,18 @@
             }());
         };
         
+        editor.change_selection_box = function (el, value)
+        {
+            var i;
+            
+            for (i = el.options.length - 1; i >= 0; i -= 1) {
+                if (el.options[i].value === value) {
+                    el.selectedIndex = i;
+                    return;
+                }
+            }
+        };
+        
         
         editor.el = document.createElement("div");
         
@@ -1393,6 +1405,9 @@
                     tilesheet_container = document.createElement("div"),
                     tilesheet_options   = document.createElement("div"),
                     tilesheet_select    = document.createElement("select");
+                
+                /// This is attached to the editor object so that it can be accessd later if a user clicks to move a tile.
+                editor.draw_tilesheet_el = tilesheet_select;
                 
                 /// Set up hide other layers checkbox.
                 hide_show_layers = function ()
@@ -2251,6 +2266,8 @@
                                 editor.load_tilesheet(editor.selected_tilesheet);
                                 editor.event.trigger("change_drawing_level", {level: tile.tile.l});
                                 editor.change_tool("draw");
+                                editor.change_selection_box(editor.draw_tilesheet_el, editor.selected_tilesheet);
+                                window.localStorage.setItem("selected_tilesheet", editor.selected_tilesheet);
                                 editor.event.trigger("map_edit");
                             }
                         }
@@ -2394,6 +2411,10 @@
                         
                         editor.selected_animated_tilesheet = animation.asset;
                         selected_animation = animation_select.value;
+                        
+                        editor.change_selection_box(tilesheet_select, animation.asset);
+                        window.localStorage.setItem("selected_animated_tilesheet", animation.asset);
+                        
                          
                         display_demo();
                         draw_tilesheet();
