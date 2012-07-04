@@ -1914,18 +1914,18 @@
                     tile_cursor.style.display = "none";
                     document.body.appendChild(tile_cursor);
                     
-                    return function show_tile_cursor()
+                    return function show_tile_cursor(which_tilesheet, which_tile, this_id)
                     {
                         tile_img.onload = function ()
                         {
                             /// Center the tile on the cursor.
-                            var half_w = editor.selected_tile.tile.w / 2,
-                                half_h = editor.selected_tile.tile.h / 2,
+                            var half_w = which_tile.w / 2,
+                                half_h = which_tile.h / 2,
                                 onmove,
                                 onup;
                             
                             /// Create the floating tile.
-                            tile_cursor_cx.drawImage(tile_img, editor.selected_tile.tile.x, editor.selected_tile.tile.y, editor.selected_tile.tile.w, editor.selected_tile.tile.h, 0, 0, editor.selected_tile.tile.w, editor.selected_tile.tile.h);
+                            tile_cursor_cx.drawImage(tile_img, which_tile.x, which_tile.y, which_tile.w, which_tile.h, 0, 0, which_tile.w, which_tile.h);
                             
                             if (typeof editor.cancel_draw_mode === "function") {
                                 editor.cancel_draw_mode({keyCode: 27});
@@ -1958,7 +1958,7 @@
                             onmove = function (e)
                             {
                                 /// Turn off snap with the ctrl key.
-                                var pos = get_tile_pos({x: e.clientX - (editor.selected_tile.tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (editor.selected_tile.tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
+                                var pos = get_tile_pos({x: e.clientX - (which_tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (which_tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
                                 tile_cursor.style.display = "block";
                                 tile_cursor.style.left = pos.x + "px";
                                 tile_cursor.style.top  = pos.y + "px";
@@ -1984,13 +1984,12 @@
                                     overlaps_right,
                                     remove_overlapping,
                                     target = e.srcElement || e.originalTarget,
-                                    tile,
                                     tile_bottom,
                                     tile_right,
                                     sector,
                                     sector_x,
                                     sector_y,
-                                    pos = get_tile_pos({x: e.clientX - (editor.selected_tile.tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (editor.selected_tile.tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
+                                    pos = get_tile_pos({x: e.clientX - (which_tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (which_tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
                                 
                                 if (e.buttons !== 1) {
                                     /// Only accept left clicks.
@@ -2014,13 +2013,11 @@
                                     }
                                     
                                     /// Does this map already uses this asset?
-                                    asset_id = editor.cur_map.assets.indexOf(editor.selected_tile.tilesheet);
+                                    asset_id = editor.cur_map.assets.indexOf(which_tilesheet);
                                     if (asset_id === -1) {
                                         asset_id = editor.cur_map.assets.length;
-                                        editor.cur_map.assets[asset_id] = editor.selected_tile.tilesheet;
+                                        editor.cur_map.assets[asset_id] = which_tilesheet;
                                     }
-                                    
-                                    tile = editor.tiles[editor.cur_map.assets[asset_id]][editor.selected_tile.tile_num];
                                     
                                     /// Make sure that the position is inside the sectors.
                                     sector_x = (pos.x - (pos.x % sector_size)) / sector_size;
@@ -2039,8 +2036,8 @@
                                         sector_y = editor.cur_map.data[sector_x].length - 1;
                                     }
                                     
-                                    tile_right  = pos.x + tile.w;
-                                    tile_bottom = pos.y + tile.h;
+                                    tile_right  = pos.x + which_tile.w;
+                                    tile_bottom = pos.y + which_tile.h;
                                     
                                     overlaps_right = (sector_x < (tile_right  - (tile_right  % sector_size)) / sector_size);
                                     overlaps_down  = (sector_y < (tile_bottom - (tile_bottom % sector_size)) / sector_size);
@@ -2068,7 +2065,7 @@
                                             tmp_base_tile = editor.tiles[editor.cur_map.assets[tmp_tile.a]][tmp_tile.t];
                                             if (tmp_tile.l === level && tmp_tile.x < tile_right && tmp_tile.x + tmp_base_tile.w > pos.x && tmp_tile.y < tile_bottom && tmp_tile.y + tmp_base_tile.h > pos.y) {
                                                 /// If it is the same exact tile on the same exact position, don't do anything.
-                                                if (editor.selected_tile.tile_num === tmp_tile.t && asset_id === tmp_tile.a && tmp_tile.x === pos.x && tmp_tile.y === pos.y) {
+                                                if (this_id === tmp_tile.t && asset_id === tmp_tile.a && tmp_tile.x === pos.x && tmp_tile.y === pos.y) {
                                                     return true;
                                                 }
                                                 /// Erase the old tile.
@@ -2109,7 +2106,7 @@
                                     sector[sector.length] = {
                                         a: asset_id,
                                         l: level,
-                                        t: editor.selected_tile.tile_num,
+                                        t: this_id,
                                         x: pos.x,
                                         y: pos.y
                                     };
@@ -2117,8 +2114,8 @@
                                     editor.event.trigger("map_edit");
                                     
                                     /// Since nothing can over lap on the same level, clear the space first.
-                                    editor.cur_map.canvases[level].cx.clearRect(pos.x, pos.y, tile.w, tile.h);
-                                    editor.cur_map.canvases[level].cx.drawImage(editor.assets.images[editor.selected_tilesheet], tile.x, tile.y, tile.w, tile.h, pos.x, pos.y, tile.w, tile.h);
+                                    editor.cur_map.canvases[level].cx.clearRect(pos.x, pos.y, which_tile.w, which_tile.h);
+                                    editor.cur_map.canvases[level].cx.drawImage(editor.assets.images[which_tilesheet], which_tile.x, which_tile.y, which_tile.w, which_tile.h, pos.x, pos.y, which_tile.w, which_tile.h);
                                 }
                             };
                             
@@ -2147,10 +2144,10 @@
                             editor.tool = "draw";
                         };
                         
-                        tile_cursor.setAttribute("width",  editor.selected_tile.tile.w);
-                        tile_cursor.setAttribute("height", editor.selected_tile.tile.h);
+                        tile_cursor.setAttribute("width",  which_tile.w);
+                        tile_cursor.setAttribute("height", which_tile.h);
                         
-                        tile_img.src = "/assets/" + editor.selected_tile.tilesheet;
+                        tile_img.src = "/assets/" + which_tilesheet;
                     };
                 }());
                 
@@ -2163,7 +2160,11 @@
                     
                     if (tool === "draw") {
                         if (editor.selected_tile) {
-                            show_tile_cursor();
+                            show_tile_cursor(editor.selected_tile.tilesheet, editor.selected_tile.tile, editor.selected_tile.tile_num);
+                        }
+                    } else if (tool === "draw_animation") {
+                        if (editor.selected_animated_tilesheet) {
+                            show_tile_cursor(editor.selected_animation.asset, editor.tiles[editor.selected_animation.asset][editor.selected_animation.frames[0]]);
                         }
                     }
                 };
@@ -2594,7 +2595,7 @@
                     draw_tilesheet();
                 };
                 
-                /// Rest the animations to make a new one.
+                /// Prepare to reset the animations to make a new one.
                 new_button.onclick = function ()
                 {
                     if (typeof selected_animation === "undefined" && cur_animation.frames.length > 0 && !confirm("Are you sure you want to discard the changes?")) {
@@ -2686,7 +2687,7 @@
                 };
                 
                 animation_select.onchange = animation_select_change;
-                animation_select.onkeyup = animation_select_change;
+                animation_select.onkeyup  = animation_select_change;
                 
                 load_animations();
                 
@@ -2694,6 +2695,15 @@
                 cur_animation.delay = 1;
                 
                 editor.do_animation(cur_animation, {x: 0, y: 0}, demo_canvas.getContext("2d"), true);
+                
+                demo_canvas.onclick = function ()
+                {
+                    /// Has this animation been saved?
+                    if (selected_animation) {
+                        editor.change_tool("draw_animation");
+                    }
+                };
+                
                 
                 tabs[2].appendChild(animation_select);
                 tabs[2].appendChild(document.createElement("br"));
