@@ -2164,7 +2164,7 @@
                         }
                     } else if (tool === "draw_animation") {
                         if (editor.selected_animated_tilesheet) {
-                            show_tile_cursor(editor.selected_animation.asset, editor.tiles[editor.selected_animation.asset][editor.selected_animation.frames[0]]);
+                            show_tile_cursor(editor.cur_animation.asset, editor.tiles[editor.cur_animation.asset][editor.cur_animation.frames[0]], editor.selected_animation);
                         }
                     }
                 };
@@ -2342,11 +2342,11 @@
                     assets_updated,
                     tilesheet_select_onchange,
                     
-                    selected_animation,
                     cur_frame = 0,
-                    cur_animation = {frames: []},
                     demo_size,
                     tilesheet_canvas_top;
+                
+                editor.cur_animation = {frames: []};
                 
                 tilesheet_canvas_cx = tilesheet_canvas.getContext("2d");
                 
@@ -2388,7 +2388,7 @@
                         Object.keys(editor.animations).sort().forEach(function (animation_name)
                         {
                             ///NOTE: new Option(text, value, default_selected, selected);
-                            animation_select.options[animation_select.options.length] = new Option(animation_name, animation_name, false, (animation_name === selected_animation));
+                            animation_select.options[animation_select.options.length] = new Option(animation_name, animation_name, false, (animation_name === editor.selected_animation));
                         });
                     }
                 };
@@ -2401,9 +2401,9 @@
                     animation = editor.animations[animation_select.value];
                     
                     if (animation_select.value !== "" && animation) {
-                        cur_animation.frames = animation.frames;
-                        cur_animation.asset = animation.asset;
-                        cur_animation.delay = animation.delay;
+                        editor.cur_animation.frames = animation.frames;
+                        editor.cur_animation.asset = animation.asset;
+                        editor.cur_animation.delay = animation.delay;
                         delay_box.value = animation.delay;
                         
                         tile = editor.tiles[animation.asset][animation.frames[0]];
@@ -2411,7 +2411,7 @@
                         demo_size = {w: tile.w, h: tile.h};
                         
                         editor.selected_animated_tilesheet = animation.asset;
-                        selected_animation = animation_select.value;
+                        editor.selected_animation = animation_select.value;
                         
                         editor.change_selection_box(tilesheet_select, animation.asset);
                         window.localStorage.setItem("selected_animated_tilesheet", animation.asset);
@@ -2419,7 +2419,7 @@
                         display_demo();
                         draw_tilesheet();
                     } else {
-                        selected_animation = undefined;
+                        editor.selected_animation = undefined;
                     }
                 };
                 
@@ -2462,13 +2462,13 @@
                             /// Now, draw a dark rectangle for each tile that is already made.
                             editor.tiles[editor.selected_animated_tilesheet].forEach(function (tile, i)
                             {
-                                if (cur_animation.frames.indexOf(i) === -1) {
+                                if (editor.cur_animation.frames.indexOf(i) === -1) {
                                     tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
                                 }
                             });
                             tilesheet_canvas_cx.fillStyle = "rgba(255,255,255,.4)";
                             /// Now, draw a dark rectangle for each tile that is already made.
-                            cur_animation.frames.forEach(function (i)
+                            editor.cur_animation.frames.forEach(function (i)
                             {
                                 var tile = editor.tiles[editor.selected_animated_tilesheet][i];
                                 tilesheet_canvas_cx.fillRect(tile.x, tile.y, tile.w, tile.h);
@@ -2557,12 +2557,12 @@
                     var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_animated_tilesheet, e);
                     
                     if (tile_selected) {
-                        if (!cur_animation.asset) {
-                            cur_animation.asset = editor.selected_animated_tilesheet;
+                        if (!editor.cur_animation.asset) {
+                            editor.cur_animation.asset = editor.selected_animated_tilesheet;
                             demo_size = {w: tile_selected.tile.w, h: tile_selected.tile.h};
                             display_demo();
                         }
-                        cur_animation.frames[cur_animation.frames.length] = tile_selected.num;
+                        editor.cur_animation.frames[editor.cur_animation.frames.length] = tile_selected.num;
                         draw_tilesheet();
                     }
                 };
@@ -2570,9 +2570,9 @@
                 
                 ondelay_change = function ()
                 {
-                    cur_animation.delay = Number(delay_box.value);
-                    if (isNaN(cur_animation.delay)) {
-                        cur_animation.delay = 1;
+                    editor.cur_animation.delay = Number(delay_box.value);
+                    if (isNaN(editor.cur_animation.delay)) {
+                        editor.cur_animation.delay = 1;
                     }
                 };
                 
@@ -2582,15 +2582,15 @@
                 
                 editor.reset_demo_animation = function ()
                 {
-                    cur_animation.frames = [];
-                    delete cur_animation.asset;
+                    editor.cur_animation.frames = [];
+                    delete editor.cur_animation.asset;
                     ondelay_change();
                     
                     demo_canvas.setAttribute("width",  0);
                     demo_canvas.setAttribute("height", 0);
                     container_div.style.top = tilesheet_canvas_top + "px";
                     demo_canvas.style.display = "none";
-                    selected_animation = undefined;
+                    editor.selected_animation = undefined;
                     animation_select.selectedIndex = 0;
                     draw_tilesheet();
                 };
@@ -2598,7 +2598,7 @@
                 /// Prepare to reset the animations to make a new one.
                 new_button.onclick = function ()
                 {
-                    if (typeof selected_animation === "undefined" && cur_animation.frames.length > 0 && !confirm("Are you sure you want to discard the changes?")) {
+                    if (typeof editor.selected_animation === "undefined" && editor.cur_animation.frames.length > 0 && !confirm("Are you sure you want to discard the changes?")) {
                         return;
                     }
                     
@@ -2633,29 +2633,29 @@
                     var animation_name;
                     
                     /// Don't save if there are no frames.
-                    if (cur_animation.frames < 1) {
+                    if (editor.cur_animation.frames < 1) {
                         return;
                     }
                     
                     /// Is it a new animation?
-                    if (!selected_animation) {
+                    if (!editor.selected_animation) {
                         animation_name = prompt("Enter animation name:");
                         
                         if (animation_name === null || animation_name.trim() === "") {
                             return;
                         }
-                        selected_animation = animation_name;
-                    } else if (!confirm("Are you sure you want to save over \"" + selected_animation + "\"?\n\n(If not, select \"(new)\" in the animation drop down box.)")) {
+                        editor.selected_animation = animation_name;
+                    } else if (!confirm("Are you sure you want to save over \"" + editor.selected_animation + "\"?\n\n(If not, select \"(new)\" in the animation drop down box.)")) {
                         return;
                     }
-                    save_animation(selected_animation, cur_animation);
+                    save_animation(editor.selected_animation, editor.cur_animation);
                 };
                 
                 /// Remove the last frame.
                 rem_button.onclick = function ()
                 {
-                    if (cur_animation.frames.length > 0) {
-                        cur_animation.frames.pop();
+                    if (editor.cur_animation.frames.length > 0) {
+                        editor.cur_animation.frames.pop();
                         draw_tilesheet();
                     }
                 };
@@ -2665,7 +2665,7 @@
                 {
                     var ajax;
                     
-                    if (confirm("Do you really want to delete \"" + selected_animation + "\"?")) {
+                    if (confirm("Do you really want to delete \"" + editor.selected_animation + "\"?")) {
                         ajax = new window.XMLHttpRequest();
                         ajax.open("POST", "/api");
                         
@@ -2681,8 +2681,8 @@
                             load_animations();
                         });
                         
-                        ajax.send("action=del_animation&data=" + JSON.stringify({name: selected_animation}));
-                        selected_animation = undefined;
+                        ajax.send("action=del_animation&data=" + JSON.stringify({name: editor.selected_animation}));
+                        editor.selected_animation = undefined;
                     }
                 };
                 
@@ -2692,14 +2692,14 @@
                 load_animations();
                 
                 delay_box.value = 1;
-                cur_animation.delay = 1;
+                editor.cur_animation.delay = 1;
                 
-                editor.do_animation(cur_animation, {x: 0, y: 0}, demo_canvas.getContext("2d"), true);
+                editor.do_animation(editor.cur_animation, {x: 0, y: 0}, demo_canvas.getContext("2d"), true);
                 
                 demo_canvas.onclick = function ()
                 {
                     /// Has this animation been saved?
-                    if (selected_animation) {
+                    if (editor.selected_animation) {
                         editor.change_tool("draw_animation");
                     }
                 };
