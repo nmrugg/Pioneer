@@ -2405,7 +2405,7 @@
                         cur_animation.delay = animation.delay;
                         delay_box.value = animation.delay;
                         
-                        tile = editor.tiles[animation.asset][0];
+                        tile = editor.tiles[animation.asset][animation.frames[0]];
                         
                         demo_size = {w: tile.w, h: tile.h};
                         
@@ -2414,7 +2414,6 @@
                         
                         editor.change_selection_box(tilesheet_select, animation.asset);
                         window.localStorage.setItem("selected_animated_tilesheet", animation.asset);
-                        
                          
                         display_demo();
                         draw_tilesheet();
@@ -2628,6 +2627,10 @@
                 save_button.onclick = function ()
                 {
                     var animation_name;
+                    
+                    if (cur_animation.frames < 1) {
+                        return;
+                    }
                     
                     if (!selected_animation) {
                         animation_name = prompt("Enter animation name:");
