@@ -491,16 +491,19 @@
                     /// Structure:
                     /// map.data[sector_x][sector_y][tiles]
                     /// The tiles object:
-                    ///     a: asset_id
+                    ///     a: asset_id (only for normal tiles, not animations)
                     ///     l: level
                     ///     t: tile_id
                     ///     x: x
                     ///     y: y
                     for (i = sector.length - 1; i >= 0; i -= 1) {
                         tile = sector[i];
-                        base_tile = editor.tiles[map.assets[tile.a]][tile.t];
-                        
-                        map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
+                        /// Is it a normal tile (not an animation)?
+                        if (tile.a) {
+                            base_tile = editor.tiles[map.assets[tile.a]][tile.t];
+                            
+                            map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
+                        }
                     }
                     callback(true);
                 };
@@ -904,7 +907,7 @@
                     tile,
                     time = Date.now();
                 
-                since = Date.now() - last_time;
+                since = time - last_time;
                 
                 if (since > 100 && editor.cur_map.loaded) {
                     tenths = Math.round(since / 100);
@@ -2103,13 +2106,22 @@
                                     
                                     sector = editor.cur_map.data[sector_x][sector_y];
                                     
-                                    sector[sector.length] = {
-                                        a: asset_id,
-                                        l: level,
-                                        t: this_id,
-                                        x: pos.x,
-                                        y: pos.y
-                                    };
+                                    if (editor.tool === "draw") {
+                                        sector[sector.length] = {
+                                            a: asset_id,
+                                            l: level,
+                                            t: this_id,
+                                            x: pos.x,
+                                            y: pos.y
+                                        };
+                                    } else if (editor.tool === "draw_animation") {
+                                        sector[sector.length] = {
+                                            l: level,
+                                            t: this_id,
+                                            x: pos.x,
+                                            y: pos.y
+                                        };
+                                    }
                                     
                                     editor.event.trigger("map_edit");
                                     
@@ -2306,7 +2318,7 @@
                 {
                     if (editor.cur_map && editor.cur_map.loaded) {
                         /// If the current tab is the Draw tab, let the user be able to select already drawn tiles.
-                        if (e.cur_tab === 1) {
+                        if (e.cur_tab === 1 || e.cur_tab === 2) {
                             window.addEventListener("mousemove",  onmove,  false);
                             window.addEventListener("click",      onclick, false);
                         } else {
@@ -2391,7 +2403,7 @@
                             animation_select.options[animation_select.options.length] = new Option(animation_name, animation_name, false, (animation_name === editor.selected_animation));
                         });
                     }
-                };
+                }
                 
                 animation_select_change = function ()
                 {
@@ -2598,7 +2610,7 @@
                 /// Prepare to reset the animations to make a new one.
                 new_button.onclick = function ()
                 {
-                    if (typeof editor.selected_animation === "undefined" && editor.cur_animation.frames.length > 0 && !confirm("Are you sure you want to discard the changes?")) {
+                    if (typeof editor.selected_animation === "undefined" && editor.cur_animation.frames.length > 0 && !window.confirm("Are you sure you want to discard the changes?")) {
                         return;
                     }
                     
@@ -2639,13 +2651,13 @@
                     
                     /// Is it a new animation?
                     if (!editor.selected_animation) {
-                        animation_name = prompt("Enter animation name:");
+                        animation_name = window.prompt("Enter animation name:");
                         
                         if (animation_name === null || animation_name.trim() === "") {
                             return;
                         }
                         editor.selected_animation = animation_name;
-                    } else if (!confirm("Are you sure you want to save over \"" + editor.selected_animation + "\"?\n\n(If not, select \"(new)\" in the animation drop down box.)")) {
+                    } else if (!window.confirm("Are you sure you want to save over \"" + editor.selected_animation + "\"?\n\n(If not, select \"(new)\" in the animation drop down box.)")) {
                         return;
                     }
                     save_animation(editor.selected_animation, editor.cur_animation);
@@ -2665,7 +2677,7 @@
                 {
                     var ajax;
                     
-                    if (confirm("Do you really want to delete \"" + editor.selected_animation + "\"?")) {
+                    if (window.confirm("Do you really want to delete \"" + editor.selected_animation + "\"?")) {
                         ajax = new window.XMLHttpRequest();
                         ajax.open("POST", "/api");
                         
@@ -2704,6 +2716,7 @@
                     }
                 };
                 
+                demo_canvas.style.cursor = "pointer";
                 
                 tabs[2].appendChild(animation_select);
                 tabs[2].appendChild(document.createElement("br"));
