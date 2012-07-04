@@ -2352,12 +2352,12 @@
                 new_button.type  = "button";
                 del_button.type  = "button";
                 save_button.type = "button";
-                rem_button.type = "button";
+                rem_button.type  = "button";
                 
                 new_button.value  = "New";
                 del_button.value  = "Delete";
                 save_button.value = "Save";
-                rem_button.value = "Remove Frame";
+                rem_button.value  = "Remove Frame";
                 
                 container_div.style.overflow = "scroll";
                 container_div.className = "canvas_container";
@@ -2528,7 +2528,7 @@
                 window.setTimeout(assets_updated, 0);
                 
                 /**
-                 * Draw the tile selection square or highlight a tile.
+                 * Highlight a tile.
                  */
                 tilesheet_canvas.onmousemove = function (e)
                 {
@@ -2550,7 +2550,7 @@
                     }
                 };
                 
-                /// Allow users to click and drag a tile
+                /// Allow users select a frame
                 tilesheet_canvas.onmousedown = function (e)
                 {
                     var tile_selected = editor.get_hover_tile(tilesheet_canvas, editor.selected_animated_tilesheet, e);
@@ -2594,6 +2594,7 @@
                     draw_tilesheet();
                 };
                 
+                /// Rest the animations to make a new one.
                 new_button.onclick = function ()
                 {
                     if (typeof selected_animation === "undefined" && cur_animation.frames.length > 0 && !confirm("Are you sure you want to discard the changes?")) {
@@ -2603,6 +2604,7 @@
                     editor.reset_demo_animation();
                 };
                 
+                /// Save an animation.
                 save_animation = function (animation_name, animation)
                 {
                     var ajax = new window.XMLHttpRequest();
@@ -2624,14 +2626,17 @@
                     ajax.send("action=save_animation&data=" + JSON.stringify({data: animation, name: animation_name}));
                 };
                 
+                /// Prepare to save an animation.
                 save_button.onclick = function ()
                 {
                     var animation_name;
                     
+                    /// Don't save if there are no frames.
                     if (cur_animation.frames < 1) {
                         return;
                     }
                     
+                    /// Is it a new animation?
                     if (!selected_animation) {
                         animation_name = prompt("Enter animation name:");
                         
@@ -2645,6 +2650,7 @@
                     save_animation(selected_animation, cur_animation);
                 };
                 
+                /// Remove the last frame.
                 rem_button.onclick = function ()
                 {
                     if (cur_animation.frames.length > 0) {
@@ -2653,6 +2659,7 @@
                     }
                 };
                 
+                /// Delete an animation
                 del_button.onclick = function ()
                 {
                     var ajax;
