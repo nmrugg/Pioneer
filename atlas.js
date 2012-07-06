@@ -2235,7 +2235,12 @@
                         sector = editor.cur_map.data[sector_x][sector_y];
                         
                         for (i = sector.length - 1; i >= 0; i -= 1) {
-                            base_tile = editor.tiles[editor.cur_map.assets[sector[i].a]][sector[i].t];
+                            /// Is it an animation?
+                            if (typeof sector[i].a === "undefined") {
+                                base_tile = editor.tiles[editor.animations[sector[i].t].asset][editor.animations[sector[i].t].frames[0]];
+                            } else {
+                                base_tile = editor.tiles[editor.cur_map.assets[sector[i].a]][sector[i].t];
+                            }
                             if ((level === -1 || sector[i].l === level) && sector[i].x < pos.x && sector[i].x + base_tile.w >= pos.x && sector[i].y < pos.y && sector[i].y + base_tile.h >= pos.y) {
                                 return {tile: sector[i], base_tile: base_tile, num: i, sector: sector};
                             }
