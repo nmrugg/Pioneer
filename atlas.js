@@ -424,7 +424,7 @@
                         editor.assets.images[asset].onload = function ()
                         {
                             editor.assets.images[asset].onerror = "";
-                            editor.assets.images[asset].onload = "";
+                            editor.assets.images[asset].onload  = "";
                             download_assets(i + 1);
                         };
                         editor.assets.images[asset].src = "/assets/" + asset;
@@ -465,6 +465,85 @@
         
         editor.draw_map = (function ()
         {
+            var animation_started;
+            
+            function start_animations()
+            {
+                var last_time = Date.now();
+                
+                /// It only needs to be started once.
+                if (animation_started) {
+                    return;
+                }
+                
+                window.setInterval(function ()
+                {
+                    var animation_obj,
+                        i,
+                        map,
+                        map_tile,
+                        sector,
+                        since,
+                        tile,
+                        time = Date.now(),
+                        x,
+                        x_len,
+                        y,
+                        y_len;
+                    
+                    since = time - last_time;
+                    
+                    if (since > 100) {
+                        map = editor.cur_map;
+                        
+                        x_len = map.data.length;
+                        y_len = map.data[0].length;
+                        
+                        for (x = 0; x < x_len; x += 1) {
+                            for (y = 0; y < y_len; y += 1) {
+                                sector = map.data[x][y];
+                                
+                                for (i = sector.length - 1; i >= 0; i -= 1) {
+                                    map_tile = sector[i];
+                                    if (typeof map_tile.a === "undefined") {
+                                        /// Is this the first time the animation has been drawn?
+                                        if (typeof map_tile.cur_frame === "undefined") {
+                                            /// Create unenumerable properties to keep track to the animation.
+                                            /// This way, these properties do not get saved when converting to JSON.
+                                            Object.defineProperty(map_tile, "cur_frame", {writable: true, value: -1});
+                                            Object.defineProperty(map_tile, "waiting",   {writable: true, value: 0});
+                                        }
+                                        
+                                        map_tile.waiting += Math.round(since / 100);
+                                        
+                                        animation_obj = editor.animations[map_tile.t];
+                                        
+                                        if (map_tile.waiting >= animation_obj.delay) {
+                                            
+                                            map_tile.cur_frame += 1;
+                                            
+                                            if (map_tile.cur_frame >= animation_obj.frames.length) {
+                                                map_tile.cur_frame = 0;
+                                            }
+                                            
+                                            tile = editor.tiles[animation_obj.asset][animation_obj.frames[map_tile.cur_frame]];
+                                            map.canvases[map_tile.l].cx.clearRect(map_tile.x, map_tile.y, tile.w, tile.h);
+                                            map.canvases[map_tile.l].cx.drawImage(editor.assets.images[animation_obj.asset], tile.x, tile.y, tile.w, tile.h, map_tile.x, map_tile.y, tile.w, tile.h);
+                                            
+                                            map_tile.waiting = 0;
+                                        }
+                                        
+                                    }
+                                }
+                            }
+                        }
+                        last_time = time;
+                    }
+                }, 20);
+                
+                animation_started = true;
+            }
+            
             function draw_sector(map, sector_x, sector_y, delay, callback)
             {
                 var loop_and_draw,
@@ -499,7 +578,7 @@
                     for (i = sector.length - 1; i >= 0; i -= 1) {
                         tile = sector[i];
                         /// Is it a normal tile (not an animation)?
-                        if (tile.a) {
+                        if (typeof tile.a !== "undefined") {
                             base_tile = editor.tiles[map.assets[tile.a]][tile.t];
                             
                             map.canvases[tile.l].cx.drawImage(editor.assets.images[map.assets[tile.a]], base_tile.x, base_tile.y, base_tile.w, base_tile.h, tile.x, tile.y, base_tile.w, base_tile.h);
@@ -534,6 +613,10 @@
                 if (!map.data) {
                     return false;
                 }
+                
+                /// Start the animation loop.
+                ///NOTE: This will only start once
+                start_animations();
                 
                 /// Make sure all of the canvases are blank.
                 map.canvases.forEach(function (canvas)
@@ -890,61 +973,6 @@
             return false;
         };
         
-        editor.animation = (function ()
-        {
-            var animations = [],
-                animations_len = [],
-                interval,
-                last_time = Date.now();
-            
-            interval = window.setInterval(function ()
-            {
-                var animation,
-                    i,
-                    map_num = editor.selected_map,
-                    since,
-                    tenths,
-                    tile,
-                    time = Date.now();
-                
-                since = time - last_time;
-                
-                if (since > 100 && editor.cur_map.loaded) {
-                    tenths = Math.round(since / 100);
-                    
-                    for (i = animations_len[map_num] - 1; i >= 0; i += 1) {
-                        animation = animations[map_num][i];
-                        animation.time += tenths;
-                        if (animation.time > animation.delay) {
-                            animation.cur_frame += 1;
-                            if (animation.cur_frame > animation.frames_len) {
-                                animation.cur_frame = 0;
-                            }
-                            
-                            tile = editor.tiles[animation.obj.asset][animation.obj.frames[animation.cur_frame]];
-                            map.canvases[animation.obj.l].cx.clearRect(animation.obj.pos.x, animation.obj.pos.y, tile.w, tile.h);
-                            map.canvases[animation.obj.l].cx.drawImage(editor.assets.images[animation.obj.asset], animation.obj.pos.x, animation.obj.pos.y, tile.w, tile.h, tile.x, tile.y, tile.w, tile.h);
-                            
-                            animation.time = 0;
-                        }
-                    }
-                    last_time = time;
-                }
-            }, 20);
-            
-            return {
-                attach: function (obj, map_num)
-                {
-                    if (!animations[map_num]) {
-                        animations[map_num] = [];
-                        animations_len[map_num] = 0;
-                    }
-                    animations[map_num][animations.length] = {obj: obj, cur_frame: 0, time: 0};
-                    animations_len[map_num] += 1;
-                }
-            };
-        }());
-        
         editor.do_animation = function (animation_obj, pos, cx, repeat, callback)
         {
             var cur_frame = -1,
@@ -958,19 +986,21 @@
                     tile,
                     time = Date.now();
                 
-                since = Date.now() - last_time;
+                since = time - last_time;
                 
                 /// Stop if there is no asset.
                 if (!animation_obj.asset || animation_obj.frames.length === 0) {
                     return;
                 }
                 
-                if (since > 100 && editor.cur_tab === 2) {
+                if (since > 100) {
                     waiting += Math.round(since / 100);
                     
                     if (waiting >= animation_obj.delay) {
                         
-                        if (cur_frame + 1 >= animation_obj.frames.length) {
+                        cur_frame += 1;
+                        
+                        if (cur_frame >= animation_obj.frames.length) {
                             if (!repeat) {
                                 if (callback) {
                                     callback();
@@ -980,8 +1010,6 @@
                             }
                             
                             cur_frame = 0;
-                        } else {
-                            cur_frame += 1;
                         }
                         
                         tile = editor.tiles[animation_obj.asset][animation_obj.frames[cur_frame]];
@@ -2105,7 +2133,7 @@
                                     }
                                     
                                     sector = editor.cur_map.data[sector_x][sector_y];
-                                    
+                                    debugger;
                                     if (editor.tool === "draw") {
                                         sector[sector.length] = {
                                             a: asset_id,
