@@ -2093,7 +2093,12 @@
                                         /// It needs to go in reverse because it may remove items.
                                         for (i = sector.length - 1; i >= 0; i -= 1) {
                                             tmp_tile = sector[i];
-                                            tmp_base_tile = editor.tiles[editor.cur_map.assets[tmp_tile.a]][tmp_tile.t];
+                                            /// Is it an animation?
+                                            if (typeof tmp_tile.a === "undefined") {
+                                                tmp_base_tile = editor.tiles[editor.animations[tmp_tile.t].asset][editor.animations[tmp_tile.t].frames[0]];
+                                            } else {
+                                                tmp_base_tile = editor.tiles[editor.cur_map.assets[tmp_tile.a]][tmp_tile.t];
+                                            }
                                             if (tmp_tile.l === level && tmp_tile.x < tile_right && tmp_tile.x + tmp_base_tile.w > pos.x && tmp_tile.y < tile_bottom && tmp_tile.y + tmp_base_tile.h > pos.y) {
                                                 /// If it is the same exact tile on the same exact position, don't do anything.
                                                 if (this_id === tmp_tile.t && asset_id === tmp_tile.a && tmp_tile.x === pos.x && tmp_tile.y === pos.y) {
@@ -2133,7 +2138,8 @@
                                     }
                                     
                                     sector = editor.cur_map.data[sector_x][sector_y];
-                                    debugger;
+                                    
+                                    /// Is it a normal tile?
                                     if (editor.tool === "draw") {
                                         sector[sector.length] = {
                                             a: asset_id,
@@ -2181,7 +2187,6 @@
                             };
                             
                             window.addEventListener("keypress", editor.cancel_draw_mode, false);
-                            editor.tool = "draw";
                         };
                         
                         tile_cursor.setAttribute("width",  which_tile.w);
@@ -2302,18 +2307,25 @@
                                 editor.array_remove(tile.sector, tile.num);
                                 /// Erase the tile from the map.
                                 editor.cur_map.canvases[tile.tile.l].cx.clearRect(tile.tile.x, tile.tile.y, tile.base_tile.w, tile.base_tile.h);
-                                editor.selected_tilesheet = editor.cur_map.assets[tile.tile.a];
-                                editor.selected_tile = {
-                                    tile:      tile.base_tile,
-                                    tile_num:  tile.tile.t,
-                                    tilesheet: editor.selected_tilesheet
-                                };
-                                ///TODO: Change the drop down selection too.
-                                editor.load_tilesheet(editor.selected_tilesheet);
+                                if (typeof tile.tile.a === "undefined") {
+                                    editor.cur_animation = editor.animations[tile.tile.t];
+                                    editor.selected_animation = tile.tile.t;
+                                    editor.set_animation_selection_box(editor.selected_animation)
+                                    editor.change_tool("draw_animation");
+                                } else {
+                                    editor.selected_tilesheet = editor.cur_map.assets[tile.tile.a];
+                                    editor.selected_tile = {
+                                        tile:      tile.base_tile,
+                                        tile_num:  tile.tile.t,
+                                        tilesheet: editor.selected_tilesheet
+                                    };
+                                    ///TODO: Change the drop down selection too.
+                                    editor.load_tilesheet(editor.selected_tilesheet);
+                                    editor.change_tool("draw");
+                                    editor.change_selection_box(editor.draw_tilesheet_el, editor.selected_tilesheet);
+                                    window.localStorage.setItem("selected_tilesheet", editor.selected_tilesheet);
+                                }
                                 editor.event.trigger("change_drawing_level", {level: tile.tile.l});
-                                editor.change_tool("draw");
-                                editor.change_selection_box(editor.draw_tilesheet_el, editor.selected_tilesheet);
-                                window.localStorage.setItem("selected_tilesheet", editor.selected_tilesheet);
                                 editor.event.trigger("map_edit");
                             }
                         }
@@ -2467,6 +2479,13 @@
                         editor.selected_animation = undefined;
                     }
                 };
+                
+                /// This is to allow outside functions to set change the selected animation.
+                editor.set_animation_selection_box = function (which)
+                {
+                    editor.change_selection_box(animation_select, which);
+                    animation_select_change();
+                }
                 
                 ///NOTE: A delay is needed to let it get attached to the DOM.
                 window.setTimeout(function ()
