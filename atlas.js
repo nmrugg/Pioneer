@@ -2308,7 +2308,9 @@
                                 /// Erase the tile from the map.
                                 editor.cur_map.canvases[tile.tile.l].cx.clearRect(tile.tile.x, tile.tile.y, tile.base_tile.w, tile.base_tile.h);
                                 if (typeof tile.tile.a === "undefined") {
-                                    editor.cur_animation = editor.animations[tile.tile.t];
+                                    editor.cur_animation.asset = editor.animations[tile.tile.t].asset;
+                                    editor.cur_animation.frames = editor.animations[tile.tile.t].frames.slice();
+                                    editor.cur_animation.delay = editor.animations[tile.tile.t].delay;
                                     editor.selected_animation = tile.tile.t;
                                     editor.set_animation_selection_box(editor.selected_animation)
                                     editor.change_tool("draw_animation");
