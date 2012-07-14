@@ -50,26 +50,34 @@ function load_actor(editor, callback)
         
         editor_on_change = (function ()
         {
-            var waiting,
+            var changed_while_uploading,
+                uploading,
+                waiting,
                 timeout;
             
             function save_code()
             {
-                var ajax = new window.XMLHttpRequest(),
+                var after_upload,
+                    ajax = new window.XMLHttpRequest(),
                     code = myCodeMirror.getValue();
                 
                 if (editor.actors[editor.selected_actor] !== code) {
-                    ajax.open("POST", "/api");
-                    ajax.addEventListener("error", function ()
+                    after_upload = function ()
                     {
+                        uploading = false;
                         waiting = false;
-                    });
+                        if (changed_while_uploading) {
+                            editor_on_change();
+                            changed_while_uploading = false;
+                        }
+                    };
                     
-                    ajax.addEventListener("load", function ()
-                    {
-                        waiting = false;
-                    });
+                    ajax.open("POST", "/api");
+                    ajax.addEventListener("error", after_upload);
+                    
+                    ajax.addEventListener("load", after_upload);
                     ajax.send("action=save_actor&data=" + JSON.stringify({name: editor.selected_actor, code: code}));
+                    uploading = true;
                     
                     editor.actors[editor.selected_actor] = code;
                     ///TODO: Update the code on the page.
@@ -92,6 +100,8 @@ function load_actor(editor, callback)
                                 save_code();
                             }
                         }, 1000);
+                    } if (waiting && uploading) {
+                        changed_while_uploading = true;
                     }
                 }
             };
