@@ -74,12 +74,10 @@ function del_animations(response, data)
         }
         
         if (data && typeof data.name !== "undefined") {
-            console.log(data.name);
-            console.log(animations);
+        
             if (animations[data.name]) {
                 delete animations[data.name];
             }
-            console.log(animations);
             
             ///NOTE: To avoid race conditions, write this file synchronously.
             fs.writeFileSync("data/animations.json", JSON.stringify(animations), "utf8");
@@ -303,7 +301,7 @@ function run_api(action, response, data)
         get_animations(response)
         return;
     case "save_actor":
-        del_animations(response, data)
+        save_actor(response, data)
         return;
     }
     /// If the action is not valid, simply end.

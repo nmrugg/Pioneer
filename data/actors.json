@@ -1,0 +1,1 @@
+{"baldric":"{\n    human: false,\n    animations: {\n        walkRight: \"walk-right\",\n        walkLeft:  \"walk-left\"\n    }\n}\n","test":"{\n    human: false,\n    animations: {\n        walkRight: \"walk-right\",\n        walkLeft:  \"walk-left\"\n    }\n}\n"}
