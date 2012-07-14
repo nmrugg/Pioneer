@@ -35,6 +35,42 @@ function array_remove(array, from, to)
     return array.push.apply(array, rest);
 }
 
+function del_actor(response, data)
+{
+    response.writeHead(200, {"Content-Type": "text/plain"});
+    fs.readFile("data/actors.json", "utf8", function (err, actors)
+    {
+        if (actors) {
+            try {
+                actors = JSON.parse(actors);
+            } catch (e) {}
+        } else {
+            actors = {};
+        }
+        
+        if (data && typeof data.name !== "undefined") {
+            delete actors[data.name];
+            
+            ///NOTE: To avoid race conditions, write this file synchronously.
+            fs.writeFileSync("data/actors.json", JSON.stringify(actors), "utf8");
+        }
+        
+        response.end();
+    });
+}
+
+function get_actors(response)
+{
+    response.writeHead(200, {"Content-Type": "application/json"});
+    fs.readFile("data/actors.json", "utf8", function (err, actors)
+    {
+        if (!actors) {
+            actors = "{}";
+        }
+        
+        response.end(actors);
+    });
+}
 
 function save_actor(response, data)
 {
@@ -302,6 +338,12 @@ function run_api(action, response, data)
         return;
     case "save_actor":
         save_actor(response, data)
+        return;
+    case "get_actors":
+        get_actors(response, data)
+        return;
+    case "del_actor":
+        del_actor(response, data)
         return;
     }
     /// If the action is not valid, simply end.

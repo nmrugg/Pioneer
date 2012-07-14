@@ -2,6 +2,28 @@ function load_actor(editor, callback)
 {
     "user strict";
     
+    (function ()
+    {
+        var ajax = new window.XMLHttpRequest();
+        
+        ///TODO: Just load the actors needed on the specific map.
+        ajax.open("GET", "/api?action=get_actors");
+        
+        ajax.addEventListener("load", function ()
+        {
+            var data = {};
+            
+            try {
+                data = JSON.parse(ajax.responseText);
+            } catch (e) {}
+            
+            editor.actors = data;
+            callback();
+        });
+        
+        ajax.send();
+    }());
+    
     editor.load_actor_panel = function ()
     {
         var code_editor = document.createElement("div"),
@@ -10,9 +32,21 @@ function load_actor(editor, callback)
             del_button  = document.createElement("input"),
             update_height,
             
+            change_select_box,
             editor_on_change,
             myCodeMirror,
-            reset_code;
+            reset_code,
+            update_actor_select;
+        
+        change_select_box = function ()
+        {
+            if (actor_select_box.value) {
+                editor.selected_actor = actor_select_box.value;
+                window.localStorage.setItem("selected_actor", editor.selected_actor);
+                code_editor.style.visibility = "visible";
+                myCodeMirror.setValue(editor.actors[editor.selected_actor]);
+            }
+        };
         
         editor_on_change = (function ()
         {
@@ -24,19 +58,24 @@ function load_actor(editor, callback)
                 var ajax = new window.XMLHttpRequest(),
                     code = myCodeMirror.getValue();
                 
-                ajax.open("POST", "/api");
-                ajax.addEventListener("error", function ()
-                {
+                if (editor.actors[editor.selected_actor] !== code) {
+                    ajax.open("POST", "/api");
+                    ajax.addEventListener("error", function ()
+                    {
+                        waiting = false;
+                    });
+                    
+                    ajax.addEventListener("load", function ()
+                    {
+                        waiting = false;
+                    });
+                    ajax.send("action=save_actor&data=" + JSON.stringify({name: editor.selected_actor, code: code}));
+                    
+                    editor.actors[editor.selected_actor] = code;
+                    ///TODO: Update the code on the page.
+                } else {
                     waiting = false;
-                });
-                
-                ajax.addEventListener("load", function ()
-                {
-                    waiting = false;
-                });
-                ajax.send("action=save_actor&data=" + JSON.stringify({name: editor.selected_actor, code: code}));
-                
-                ///TODO: Update the code on the page.
+                }
             };
             
             return function (force)
@@ -63,6 +102,21 @@ function load_actor(editor, callback)
             myCodeMirror.setValue("{\n    human: false,\n    animations: {\n        walkRight: \"walk-right\",\n        walkLeft:  \"walk-left\"\n    }\n}\n");
         };
         
+        update_actor_select = function (which)
+        {
+            if (typeof which === "undefined") {
+                which = editor.selected_actor;
+            }
+            
+            actor_select_box.options.length = 0;
+            
+            Object.keys(editor.actors).sort().forEach(function (name)
+            {
+                ///NOTE: new Option(text, value, default_selected, selected);
+                actor_select_box.options[actor_select_box.options.length] = new Option(name, name, false, (name === which));
+            });
+        };
+        
         new_button.type  = "button";
         new_button.value = "Create New Actor";
         
@@ -78,6 +132,7 @@ function load_actor(editor, callback)
                 editor.selected_actor = name;
                 reset_code();
                 code_editor.style.visibility = "visible";
+                update_actor_select(name);
             }
         };
         
@@ -86,9 +141,21 @@ function load_actor(editor, callback)
         
         del_button.onclick = function ()
         {
+            var ajax;
+            
             if (editor.selected_actor) {
                 if (window.confirm("Do you really want to delete \"" + editor.selected_actor + "\"?")) {
+                    ajax = new window.XMLHttpRequest();
                     
+                    ///TODO: Just load the actors needed on the specific map.
+                    ajax.open("GET", "/api?action=del_actor&data=" + window.encodeURIComponent(JSON.stringify({name: editor.selected_actor})));
+                    
+                    ajax.send();
+                    
+                    /// Delete the actor from the objec after sending the Ajax request.
+                    delete editor.actors[editor.selected_actor];
+                    update_actor_select();
+                    change_select_box();
                 }
             }
         };
@@ -97,6 +164,7 @@ function load_actor(editor, callback)
         editor.tabs[3].appendChild(actor_select_box);
         editor.tabs[3].appendChild(document.createElement("br"));
         editor.tabs[3].appendChild(new_button);
+        editor.tabs[3].appendChild(document.createTextNode(" "));
         editor.tabs[3].appendChild(del_button);
         editor.tabs[3].appendChild(code_editor);
         
@@ -145,9 +213,13 @@ function load_actor(editor, callback)
         
         window.addEventListener("resize", update_height, false);
         
+        editor.selected_actor = window.localStorage.getItem("selected_actor");
         
-        reset_code();
+        actor_select_box.onchange = change_select_box;
+        actor_select_box.onkeyup  = change_select_box;
+        
+        update_actor_select();
+        
+        change_select_box();
     };
-    
-    callback();
 };
