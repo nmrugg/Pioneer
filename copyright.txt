@@ -8,3 +8,4 @@ See https://creativecommons.org/licenses/by-sa/3.0/ for more info.
 Pioneer uses the following MIT licensed libraries:
  * formidable (node_modules/formidable)
  * mime (node_modules/mime)
+ * CodeMirror (codemirror)

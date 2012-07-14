@@ -26,8 +26,7 @@
     function start()
     {
         var editor = {},
-            sector_size = 640,
-            tabs   = [];
+            sector_size = 640;
         
         document.removeEventListener("DOMContentLoaded", start, false);
                 
@@ -45,6 +44,8 @@
         
         /// Create a sample world_map object.
         editor.world_map = [];
+        
+        editor.tabs = [];
         
         editor.get_game_data = function (callback)
         {
@@ -155,10 +156,13 @@
                     {
                         ///TODO: Just get the assets that are needed.
                         editor.get_assets(function () {
-                            editor.draw_map(editor.selected_map, null, function ()
+                            load_actor(editor, function ()
                             {
-                                editor.cur_map.loaded = true;
-                                editor.load_panel();
+                                editor.draw_map(editor.selected_map, null, function ()
+                                {
+                                    editor.cur_map.loaded = true;
+                                    editor.load_panel();
+                                });
                             });
                         });
                     });
@@ -1149,9 +1153,10 @@
                         };
                     }());
                     
-                    tabs[tabs.length] = create_tab("World",      tab_container, ul);
-                    tabs[tabs.length] = create_tab("Draw",       tab_container, ul);
-                    tabs[tabs.length] = create_tab("Animations", tab_container, ul);
+                    editor.tabs[editor.tabs.length] = create_tab("World",      tab_container, ul);
+                    editor.tabs[editor.tabs.length] = create_tab("Draw",       tab_container, ul);
+                    editor.tabs[editor.tabs.length] = create_tab("Animations", tab_container, ul);
+                    editor.tabs[editor.tabs.length] = create_tab("Actors", tab_container, ul);
                     
                     editor.el.appendChild(tab_container);
                     
@@ -1408,18 +1413,19 @@
                     return level_div;
                 };
                 
-                tabs[0].appendChild(document.createTextNode("Snap: "));
-                tabs[0].appendChild(snap_box);
-                tabs[0].appendChild(document.createElement("br"));
-                tabs[0].appendChild(document.createTextNode("Show grid: "));
-                tabs[0].appendChild(show_grid);
-                tabs[0].appendChild(document.createElement("br"));
-                tabs[0].appendChild(document.createTextNode("Map #: "));
-                tabs[0].appendChild(map_box);
-                tabs[0].appendChild(document.createElement("br"));
-                tabs[0].appendChild(document.createTextNode("Map size: "));
-                tabs[0].appendChild(map_size_box);
-                tabs[0].appendChild(create_level_options());
+                editor.tabs[0].appendChild(document.createTextNode("Snap: "));
+                editor.tabs[0].appendChild(snap_box);
+                /// Not yet implamented
+                //tabs[0].appendChild(document.createElement("br"));
+                //tabs[0].appendChild(document.createTextNode("Show grid: "));
+                //tabs[0].appendChild(show_grid);
+                editor.tabs[0].appendChild(document.createElement("br"));
+                editor.tabs[0].appendChild(document.createTextNode("Map #: "));
+                editor.tabs[0].appendChild(map_box);
+                editor.tabs[0].appendChild(document.createElement("br"));
+                editor.tabs[0].appendChild(document.createTextNode("Map size: "));
+                editor.tabs[0].appendChild(map_size_box);
+                editor.tabs[0].appendChild(create_level_options());
             }());
             
             /**
@@ -1521,29 +1527,29 @@
                 ///NOTE: A delay is needed to let it get attached to the DOM.
                 window.setTimeout(function ()
                 {
-                    var cur_style = tabs[1].style.display;
+                    var cur_style = editor.tabs[1].style.display;
                     /// Force the current tab to be hidden so that this tab's position will not be affected by it.
-                    tabs[window.localStorage.getItem("cur_tab")].style.display = "none";
+                    editor.tabs[window.localStorage.getItem("cur_tab")].style.display = "none";
                     /// Because elements only have offsetTop if they are displayed on the screen, we must make sure that the tab is set to block (even though the user never sees anything unusual).
-                    tabs[1].style.display = "block";
+                    editor.tabs[1].style.display = "block";
                     /// Set the top to the current position and bottom to the bottom of the parent div.
                     tilesheet_container.style.top = tilesheet_container.offsetTop + "px";
                     tilesheet_container.style.bottom = 0;
-                    tabs[1].style.display = cur_style;
+                    editor.tabs[1].style.display = cur_style;
                     /// Make sure that the current tab is visible.
-                    tabs[window.localStorage.getItem("cur_tab")].style.display = "block";
+                    editor.tabs[window.localStorage.getItem("cur_tab")].style.display = "block";
                 }, 0);
                 
-                tabs[1].appendChild(document.createTextNode("Drawing Layer: "));
-                tabs[1].appendChild(level_select_el);
-                tabs[1].appendChild(document.createElement("br"));
-                tabs[1].appendChild(document.createTextNode("Hide other layers: "));
-                tabs[1].appendChild(hide_show_checkbox);
-                tabs[1].appendChild(document.createElement("br"));
+                editor.tabs[1].appendChild(document.createTextNode("Drawing Layer: "));
+                editor.tabs[1].appendChild(level_select_el);
+                editor.tabs[1].appendChild(document.createElement("br"));
+                editor.tabs[1].appendChild(document.createTextNode("Hide other layers: "));
+                editor.tabs[1].appendChild(hide_show_checkbox);
+                editor.tabs[1].appendChild(document.createElement("br"));
                 
-                tabs[1].appendChild(tilesheet_select);
-                tabs[1].appendChild(tilesheet_options);
-                tabs[1].appendChild(tilesheet_container);
+                editor.tabs[1].appendChild(tilesheet_select);
+                editor.tabs[1].appendChild(tilesheet_options);
+                editor.tabs[1].appendChild(tilesheet_container);
                 
                 /// Make tilesheet options
                 (function ()
@@ -2492,18 +2498,18 @@
                 ///NOTE: A delay is needed to let it get attached to the DOM.
                 window.setTimeout(function ()
                 {
-                    var cur_style = tabs[2].style.display;
+                    var cur_style = editor.tabs[2].style.display;
                     /// Force the current tab to be hidden so that this tab's position will not be affected by it.
-                    tabs[window.localStorage.getItem("cur_tab")].style.display = "none";
+                    editor.tabs[window.localStorage.getItem("cur_tab")].style.display = "none";
                     /// Because elements only have offsetTop if they are displayed on the screen, we must make sure that the tab is set to block (even though the user never sees anything unusual).
-                    tabs[2].style.display = "block";
+                    editor.tabs[2].style.display = "block";
                     /// Set the top to the current position and bottom to the bottom of the parent div.
                     container_div.style.top = container_div.offsetTop + "px";
                     tilesheet_canvas_top = container_div.offsetTop;
                     container_div.style.bottom = 0;
-                    tabs[2].style.display = cur_style;
+                    editor.tabs[2].style.display = cur_style;
                     /// Make sure that the current tab is visible.
-                    tabs[window.localStorage.getItem("cur_tab")].style.display = "block";
+                    editor.tabs[window.localStorage.getItem("cur_tab")].style.display = "block";
                 }, 0);
                 
                 draw_tilesheet = function ()
@@ -2772,24 +2778,26 @@
                 
                 demo_canvas.style.cursor = "pointer";
                 
-                tabs[2].appendChild(animation_select);
-                tabs[2].appendChild(document.createElement("br"));
-                tabs[2].appendChild(new_button);
-                tabs[2].appendChild(document.createTextNode(" "));
-                tabs[2].appendChild(save_button);
-                tabs[2].appendChild(document.createTextNode(" "));
-                tabs[2].appendChild(del_button);
-                tabs[2].appendChild(document.createTextNode(" "));
-                tabs[2].appendChild(rem_button);
-                tabs[2].appendChild(document.createElement("br"));
-                tabs[2].appendChild(document.createTextNode("Delay: "));
-                tabs[2].appendChild(delay_box);
-                tabs[2].appendChild(document.createElement("br"));
-                tabs[2].appendChild(tilesheet_select);
-                tabs[2].appendChild(document.createElement("br"));
-                tabs[2].appendChild(demo_canvas);
-                tabs[2].appendChild(container_div);
+                editor.tabs[2].appendChild(animation_select);
+                editor.tabs[2].appendChild(document.createElement("br"));
+                editor.tabs[2].appendChild(new_button);
+                editor.tabs[2].appendChild(document.createTextNode(" "));
+                editor.tabs[2].appendChild(save_button);
+                editor.tabs[2].appendChild(document.createTextNode(" "));
+                editor.tabs[2].appendChild(del_button);
+                editor.tabs[2].appendChild(document.createTextNode(" "));
+                editor.tabs[2].appendChild(rem_button);
+                editor.tabs[2].appendChild(document.createElement("br"));
+                editor.tabs[2].appendChild(document.createTextNode("Delay: "));
+                editor.tabs[2].appendChild(delay_box);
+                editor.tabs[2].appendChild(document.createElement("br"));
+                editor.tabs[2].appendChild(tilesheet_select);
+                editor.tabs[2].appendChild(document.createElement("br"));
+                editor.tabs[2].appendChild(demo_canvas);
+                editor.tabs[2].appendChild(container_div);
             }, 0);
+            
+            editor.load_actor_panel();
         };
     }
     
