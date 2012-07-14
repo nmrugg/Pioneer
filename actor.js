@@ -5,20 +5,70 @@ function load_actor(editor, callback)
     editor.load_actor_panel = function ()
     {
         var code_editor = document.createElement("div"),
-            sel_actor   = document.createElement("select"),
-            myCodeMirror,
+            actor_select_box = document.createElement("select"),
             new_button  = document.createElement("input"),
-            update_height;
+            update_height,
+            
+            editor_on_change,
+            myCodeMirror,
+            reset_code;
+        
+        editor_on_change = (function ()
+        {
+            var waiting;
+            
+            return function ()
+            {
+                if (!waiting) {
+                    waiting = true;
+                    window.setTimeout(function ()
+                    {
+                        var ajax,
+                            code;
+                        
+                        if (editor.selected_actor) {
+                            ajax = new window.XMLHttpRequest();
+                            code = myCodeMirror.getValue();
+                            
+                            ajax.open("POST", "/api");
+                            ajax.addEventListener("error", function ()
+                            {
+                                waiting = false;
+                            });
+                            
+                            ajax.addEventListener("load", function ()
+                            {
+                                waiting = false;
+                            });
+                            ajax.send("action=save_actor&data=" + JSON.stringify({name: editor.selected_actor, code: code}));
+                            
+                            ///TODO: Update the code on the page.
+                        }
+                        
+                    }, 1000);
+                }
+            };
+        }());
+        
+        reset_code = function ()
+        {
+            myCodeMirror.setValue("{\n    human: false,\n    animations: {\n        walkRight: \"walk-right\",\n        walkLeft:  \"walk-left\"\n    }\n}\n");
+        };
         
         new_button.type  = "button";
         new_button.value = "Create New Actor";
         
-        editor.tabs[3].appendChild(sel_actor);
+        new_button.onclick = function ()
+        {
+            delete editor.selected_actor;
+            reset_code();
+        };
+        
+        editor.tabs[3].appendChild(actor_select_box);
         editor.tabs[3].appendChild(document.createElement("br"));
         editor.tabs[3].appendChild(new_button);
         editor.tabs[3].appendChild(code_editor);
         
-        //code_editor.style.position = "absolute";
         code_editor.style.minWidth = "450px";
         code_editor.style.maxWidth = "450px";
         code_editor.style.left = "0";
@@ -42,7 +92,7 @@ function load_actor(editor, callback)
         }, 0);
         
         
-        myCodeMirror = CodeMirror(code_editor, {mode: "javascript", lineNumbers: true, indentUnit: 4, matchBrackets: true});
+        myCodeMirror = CodeMirror(code_editor, {mode: "javascript", lineNumbers: true, indentUnit: 4, matchBrackets: true, smartIndent: false, onChange: editor_on_change});
         
         /// To add code:
         ///     myCodeMirror.setValue("var test = 'testing';");
@@ -58,6 +108,8 @@ function load_actor(editor, callback)
         
         window.addEventListener("resize", update_height, false);
         
+        
+        reset_code();
     };
     
     callback();

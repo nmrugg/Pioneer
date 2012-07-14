@@ -35,6 +35,31 @@ function array_remove(array, from, to)
     return array.push.apply(array, rest);
 }
 
+
+function save_actor(response, data)
+{
+    response.writeHead(200, {"Content-Type": "text/plain"});
+    fs.readFile("data/actors.json", "utf8", function (err, actors)
+    {
+        if (actors) {
+            try {
+                actors = JSON.parse(actors);
+            } catch (e) {}
+        } else {
+            actors = {};
+        }
+        
+        if (data && typeof data.name !== "undefined" && data.code) {
+            actors[data.name] = data.code;
+            
+            ///NOTE: To avoid race conditions, write this file synchronously.
+            fs.writeFileSync("data/actors.json", JSON.stringify(actors), "utf8");
+        }
+        
+        response.end();
+    });
+}
+
 function del_animations(response, data)
 {
     response.writeHead(200, {"Content-Type": "text/plain"});
@@ -277,7 +302,7 @@ function run_api(action, response, data)
     case "get_animations":
         get_animations(response)
         return;
-    case "del_animation":
+    case "save_actor":
         del_animations(response, data)
         return;
     }
