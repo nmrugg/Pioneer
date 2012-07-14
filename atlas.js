@@ -2705,7 +2705,7 @@
                     var animation_name;
                     
                     /// Don't save if there are no frames.
-                    if (editor.cur_animation.frames < 1) {
+                    if (editor.cur_animation.frames.length < 1) {
                         return;
                     }
                     
