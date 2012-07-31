@@ -2215,6 +2215,9 @@
                         tile_cursor.setAttribute("width",  which_tile.w);
                         tile_cursor.setAttribute("height", which_tile.h);
                         
+                        
+                        /// To fix a WebKit bug, the image must first be removed in order for the onload event to fire.
+                        tile_img.src = "";
                         tile_img.src = "/assets/" + which_tilesheet;
                     };
                 }());
@@ -2330,6 +2333,8 @@
                                 editor.array_remove(tile.sector, tile.num);
                                 /// Erase the tile from the map.
                                 editor.cur_map.canvases[tile.tile.l].cx.clearRect(tile.tile.x, tile.tile.y, tile.base_tile.w, tile.base_tile.h);
+                                
+                                /// Is it an animation?
                                 if (typeof tile.tile.a === "undefined") {
                                     editor.cur_animation.asset = editor.animations[tile.tile.t].asset;
                                     editor.cur_animation.frames = editor.animations[tile.tile.t].frames.slice();
