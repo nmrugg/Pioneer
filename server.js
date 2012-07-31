@@ -448,3 +448,5 @@ require("http").createServer(function (request, response)
         });
     }
 }).listen(7890);
+
+console.log("Server Started. Go to http://127.0.0.1:7890/");
