@@ -253,7 +253,7 @@ function remove_tile(response, data)
             } catch (e) {}
         }
         
-        if (data && data.img && data.tile) {
+        if (data && data.img && typeof data.tile !== "undefined") {
             if (tiles[data.img]) {
                 array_remove(tiles[data.img], data.tile);
             }
