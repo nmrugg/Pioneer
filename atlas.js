@@ -2821,15 +2821,6 @@
             
             editor.load_actor_panel();
         };
-        
-        /// A simple hack to move the canvas.
-        document.addEventListener("keypress", function (e)
-        {
-            /// Don't move the canvas if the cursor is on an input or seleect box.
-            if (!e.originalTarget || (e.originalTarget.tagName !== "input" && e.originalTarget.tagName !== "select")) {
-                document.title = e.keyCode + Math.random();
-            }
-        });
     }
     
     document.addEventListener("DOMContentLoaded", function ()
