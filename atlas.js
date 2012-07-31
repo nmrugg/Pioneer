@@ -1670,7 +1670,7 @@
                         }
                     };
                     
-                    window.addEventListener("keypress", function (e)
+                    window.addEventListener("keyup", function (e)
                     {
                         var ajax;
                         
@@ -2203,13 +2203,13 @@
                                         editor.tool = "select";
                                     }
                                     
-                                    window.removeEventListener("keypress", editor.cancel_draw_mode, false);
+                                    window.removeEventListener("keyup", editor.cancel_draw_mode, false);
                                     delete editor.cancel_draw_mode;
                                     document.title = editor.game_name;
                                 }
                             };
                             
-                            window.addEventListener("keypress", editor.cancel_draw_mode, false);
+                            window.addEventListener("keyup", editor.cancel_draw_mode, false);
                         };
                         
                         tile_cursor.setAttribute("width",  which_tile.w);
