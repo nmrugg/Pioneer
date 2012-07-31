@@ -1964,8 +1964,9 @@
                             /// Create the floating tile.
                             tile_cursor_cx.drawImage(tile_img, which_tile.x, which_tile.y, which_tile.w, which_tile.h, 0, 0, which_tile.w, which_tile.h);
                             
+                            /// If keypress events have been set, they need to be removed, but don't change the tool.
                             if (typeof editor.cancel_draw_mode === "function") {
-                                editor.cancel_draw_mode({keyCode: 27});
+                                editor.cancel_draw_mode({keyCode: 27, tool: editor.tool});
                             }
                             
                             function get_tile_pos(mouse_pos, dont_snap)
@@ -2184,7 +2185,11 @@
                                     tile_cursor.style.display = "none";
                                     
                                     /// Reset to the default tool.
-                                    editor.tool = "select";
+                                    if (e.tool) {
+                                        editor.tool = e.tool;
+                                    } else {
+                                        editor.tool = "select";
+                                    }
                                     
                                     window.removeEventListener("keypress", editor.cancel_draw_mode, false);
                                     delete editor.cancel_draw_mode;
