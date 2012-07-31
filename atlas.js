@@ -1961,8 +1961,12 @@
                                 onmove,
                                 onup;
                             
-                            /// Create the floating tile.
-                            tile_cursor_cx.drawImage(tile_img, which_tile.x, which_tile.y, which_tile.w, which_tile.h, 0, 0, which_tile.w, which_tile.h);
+                            ///Chrome appears to need a brief pause.
+                            window.setTimeout(function ()
+                            {
+                                /// Create the floating tile.
+                                tile_cursor_cx.drawImage(tile_img, which_tile.x, which_tile.y, which_tile.w, which_tile.h, 0, 0, which_tile.w, which_tile.h);
+                            }, 100);
                             
                             /// If keypress events have been set, they need to be removed, but don't change the tool.
                             if (typeof editor.cancel_draw_mode === "function") {
@@ -2004,6 +2008,10 @@
                                 ///NOTE: \u00d7 is the &times; symbols (i.e., mathmatical times).
                                 document.title = pos.x + " \u00d7 " + pos.y + " - " + editor.game_name;
                                 
+                                if (typeof e.buttons === "undefined") {
+                                    e.buttons = e.which;
+                                }
+                                
                                 /// Allow for drawing by holding down the button.
                                 if (e.buttons === 1 && !editor.dragging_tilesheet) {
                                     onup(e);
@@ -2028,6 +2036,10 @@
                                     sector_x,
                                     sector_y,
                                     pos = get_tile_pos({x: e.clientX - (which_tile.w > editor.world_snap_value.x ? half_w : 0), y: e.clientY - (which_tile.h > editor.world_snap_value.y ? half_h : 0)}, e.ctrlKey);
+                                
+                                if (typeof e.buttons === "undefined") {
+                                    e.buttons = e.which;
+                                }
                                 
                                 if (e.buttons !== 1) {
                                     /// Only accept left clicks.
@@ -2804,6 +2816,15 @@
             
             editor.load_actor_panel();
         };
+        
+        /// A simple hack to move the canvas.
+        document.addEventListener("keypress", function (e)
+        {
+            /// Don't move the canvas if the cursor is on an input or seleect box.
+            if (!e.originalTarget || (e.originalTarget.tagName !== "input" && e.originalTarget.tagName !== "select")) {
+                document.title = e.keyCode + Math.random();
+            }
+        });
     }
     
     document.addEventListener("DOMContentLoaded", function ()
