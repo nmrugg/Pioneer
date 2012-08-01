@@ -1,8 +1,9 @@
-=======
-Pioneer
-=======
+=============================
+Pioneer - An HTML5 map editor
+=============================
 
-An HTML5 map editor.
+This is my attempt to create a game editor and engine using only web technologies.
+It's still in the early stages of development.
 
 Eventually, this could become an entire game editor and engine,
 but I haven't had that much time to work on it, so right now,
