@@ -24,7 +24,7 @@ NOTE: Node.js has the following prerequisites:
 On Windows and Mac, you can download Node.js from <a href="http://nodejs.org/#download">here</a>.
 
 Step2:
-After installing Node.js, in Pioneer's root directory, run this:
+After installing Node.js, in Pioneer's root directory, run this:<br>
   $ node server.js
 
 Finally, open Firefox and navigate to <a href="http://127.0.0.1:7890/">http://127.0.0.1:7890/</a>.
