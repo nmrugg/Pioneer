@@ -140,11 +140,15 @@
         /// **************************
         /// * Start loading the game *
         /// **************************
+        document.title = "Loading...";
+        document.body.style.cursor = "wait";
         editor.get_game_data(function ()
         {
             if (!editor.world_map[editor.selected_map]) {
                 editor.world_map[editor.selected_map] = {};
             }
+            
+            document.title = "Loading " + editor.game_name + "...";
             editor.cur_map = editor.world_map[editor.selected_map];
             editor.cur_map.loaded = false;
             
@@ -161,6 +165,8 @@
                             {
                                 editor.draw_map(editor.selected_map, null, function ()
                                 {
+                                    document.title = editor.game_name;
+                                    document.body.style.cursor = "auto";
                                     editor.cur_map.loaded = true;
                                     editor.load_panel();
                                 });
