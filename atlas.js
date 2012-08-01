@@ -141,6 +141,7 @@
         /// * Start loading the game *
         /// **************************
         document.title = "Loading...";
+        ///NOTE: Changing the cursor does not seem to work in Firefox.
         document.body.style.cursor = "wait";
         editor.get_game_data(function ()
         {
