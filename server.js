@@ -24,7 +24,6 @@ var formidable = require("formidable"),
     fs   = require("fs"),
     mime = require("mime"),
     url  = require("url"),
-    path = require("path"),
     qs   = require("querystring");
 
 /// Array Remove - By John Resig (MIT Licensed)
@@ -352,6 +351,11 @@ function run_api(action, response, data)
 }
 
 
+if (!fs.exists) {
+    /// Add fs.exists (was path.exists).
+    fs.exists = require("path").exists;
+}
+
 require("http").createServer(function (request, response)
 {
     var form,
@@ -414,7 +418,7 @@ require("http").createServer(function (request, response)
         return;
     } else {
         /// Check to see if the client is trying to access a real file.
-        path.exists(url_parts.pathname.substr(1), function (exists)
+        fs.exists(url_parts.pathname.substr(1), function (exists)
         {
             var filename;
             
