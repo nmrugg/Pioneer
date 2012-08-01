@@ -1,0 +1,61 @@
+Code authors
+============
+
+This program was written by the following people:
+ - Nathan Rugg
+
+This program includes the following libraries:
+ - formidable (node_modules/formidable/)
+   by Felix Geisendörfer
+ - mime (node_modules/mime/)
+   by Benjamin Thomas & Robert Kieffer
+ - CodeMirror (codemirror/)
+   by Marijn Haverbeke
+
+Asset attribution
+=================
+
+Assets were authored by the following people:
+
+Lanea Zimmerman
+ - barrel.png
+ - buckets.png
+ - cup.png
+ - dirt.png
+ - dirt2.png
+ - grass.png
+ - house.png
+ - mountains.png
+ - treetop.png
+ - trunk.png
+
+Caleb Rugg
+ - Michael_Meeks.png
+ - animalsheet1.png
+ - animalsheet2.png
+ - charsheet2.png
+ - charsheet3.png
+ - thepioneerwalksheet.png
+
+Daniel Eddeland
+ - fence_alt.png
+ - plowed_soil.png
+ - tallgrass.png
+
+Casper Nilsson
+ - sika_deer_eating_sprite_96x64.png
+ - windmill.png
+
+Charles Sanchez
+ - bee.png
+
+Nathan Rugg
+ - bridge_split.png
+   (based on bridge.png by Lanea Zimmerman)
+ - chimney_smoke.png
+ - water_animated.png
+   (based on water.gif by Stefan Beller)
+ - waterfall_animated.png
+   (based on waterfall.png by Lanea Zimmerman)
+ - watergrass_animated.png
+   (based on watergrass.png by Lanea Zimmerman and water.gif by Stefan Beller)
