@@ -25,7 +25,7 @@ To build Node.js from scratch, try the following:
   $ ./configure
   $ make
   $ make install
-  
+
 NOTE: Node.js has the following prerequisites:
  - GNU make 3.81 or newer
  - python 2.6 or 2.7 (not 3.0)

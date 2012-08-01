@@ -9,13 +9,13 @@ Eventually, this could become an entire game editor and engine, but I haven't ha
 The server for Pioneer runs on Node.js
 
 Step 1:
-To build Node.js from scratch, try the following:
-  $ wget http://nodejs.org/dist/v0.8.4/node-v0.8.4.tar.gz
-  $ tar -zxvpf node-v0.8.4.tar.gz
-  $ cd node-v0.8.4
-  $ ./configure
-  $ make
-  $ make install
+To build Node.js from scratch, try the following:<br>
+  $ wget http://nodejs.org/dist/v0.8.4/node-v0.8.4.tar.gz<br>
+  $ tar -zxvpf node-v0.8.4.tar.gz<br>
+  $ cd node-v0.8.4<br>
+  $ ./configure<br>
+  $ make<br>
+  $ make install<br>
   
 NOTE: Node.js has the following prerequisites:
  - GNU make 3.81 or newer
