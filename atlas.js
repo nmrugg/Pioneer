@@ -2394,7 +2394,8 @@
                 {
                     if (editor.cur_map && editor.cur_map.loaded) {
                         /// If the current tab is the Draw tab, let the user be able to select already drawn tiles.
-                        if (e.cur_tab === 1 || e.cur_tab === 2) {
+                        ///NOTE: Temporarily, this will work on all tabs.
+                        if (true || e.cur_tab === 1 || e.cur_tab === 2) {
                             window.addEventListener("mousemove",  onmove,  false);
                             window.addEventListener("click",      onclick, false);
                         } else {
